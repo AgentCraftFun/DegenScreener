@@ -3,6 +3,7 @@ import { Personality } from "@degenscreener/shared";
 import { tweetQueries } from "@degenscreener/db";
 import { callLLM, MODELS } from "./llm-client.js";
 import { scoreSentiment } from "../sentiment/scorer.js";
+import { publishTweet } from "../events.js";
 
 const TweetSchema = z.object({
   content: z.string().max(280),
@@ -75,6 +76,14 @@ ${ctx.pnlPct ? `My P&L: ${ctx.pnlPct}%` : ""}`;
     content: res.parsed.content,
     tokenId: opts.tokenId ?? null,
     sentimentScore: sentiment.toFixed(2),
+  });
+
+  await publishTweet({
+    tweetId: tweet.id,
+    agentId,
+    content: res.parsed.content,
+    tokenId: opts.tokenId ?? null,
+    sentiment: sentiment.toFixed(2),
   });
 
   return {

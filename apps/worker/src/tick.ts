@@ -22,6 +22,15 @@ import { aggregateCandlesForTick } from "./candles/aggregator.js";
 import { Decimal } from "decimal.js";
 import { evaluateDegenAgent } from "./agents/degen-evaluator.js";
 import { evaluateDevAgent } from "./agents/dev-evaluator.js";
+import {
+  publishTradeEvent,
+  publishPriceUpdate,
+  publishTokenLaunch,
+  publishRug,
+  publishNotification,
+} from "./events.js";
+import { poolQueries } from "@degenscreener/db";
+import { userQueries } from "@degenscreener/db";
 
 export interface TickContext {
   useAi: boolean;
@@ -77,10 +86,34 @@ export async function runTick(
             dec.initialLiquidity,
             "1000000000",
           );
-          if (launched) stats.launches++;
+          if (launched) {
+            stats.launches++;
+            const pool = await poolQueries.getPoolByTokenId(launched.tokenId);
+            const price =
+              pool && new Decimal(pool.tokenReserve).gt(0)
+                ? new Decimal(pool.dscreenReserve).div(pool.tokenReserve).toFixed(18)
+                : "0";
+            await publishTokenLaunch({
+              tokenId: launched.tokenId,
+              ticker: launched.ticker,
+              name: dec.name,
+              creatorAgentId: agent.id,
+              initialPrice: price,
+            });
+          }
         } else if (dec.kind === "RUG") {
           const ok = await rugToken(agent.id, dec.tokenId);
-          if (ok) stats.rugs++;
+          if (ok) {
+            stats.rugs++;
+            const tk = await tokenQueries.getTokenById(dec.tokenId);
+            if (tk) {
+              await publishRug({
+                tokenId: dec.tokenId,
+                ticker: tk.ticker,
+                devAgentId: agent.id,
+              });
+            }
+          }
         }
       } else {
         // DEGEN
@@ -95,6 +128,20 @@ export async function runTick(
           if (res) {
             stats.trades++;
             touchedTokens.add(dec.tokenId);
+            await publishTradeEvent({
+              tradeId: res.tradeId,
+              agentId: agent.id,
+              tokenId: dec.tokenId,
+              type: "BUY",
+              dscreenAmount: dec.dscreenAmount,
+              tokenAmount: res.tokensOut,
+              priceAfter: res.priceAfter,
+            });
+            await publishPriceUpdate({
+              tokenId: dec.tokenId,
+              price: res.priceAfter,
+              volumeDelta: dec.dscreenAmount,
+            });
           }
         } else if (dec.kind === "SELL") {
           const res = await executeSellTrade(
@@ -105,6 +152,20 @@ export async function runTick(
           if (res) {
             stats.trades++;
             touchedTokens.add(dec.tokenId);
+            await publishTradeEvent({
+              tradeId: res.tradeId,
+              agentId: agent.id,
+              tokenId: dec.tokenId,
+              type: "SELL",
+              dscreenAmount: res.dscreenOut,
+              tokenAmount: dec.tokenAmount,
+              priceAfter: res.priceAfter,
+            });
+            await publishPriceUpdate({
+              tokenId: dec.tokenId,
+              price: res.priceAfter,
+              volumeDelta: res.dscreenOut,
+            });
           }
         }
       }
@@ -119,13 +180,22 @@ export async function runTick(
       const hasValue = h.some((x) => new Decimal(x.quantity).gt(0));
       if (!hasValue && fresh.status === "ACTIVE") {
         await agentQueries.updateAgentStatus(agent.id, "BROKE");
-        await notificationQueries.createNotification({
+        const notif = await notificationQueries.createNotification({
           userId: fresh.ownerId,
           type: "AGENT_BROKE",
           title: "Agent went broke",
           message: `Agent ${fresh.handle} ran out of DSCREEN and is paused.`,
         });
         stats.broke++;
+        const owner = await userQueries.getUserById(fresh.ownerId);
+        if (owner) {
+          await publishNotification(owner.walletAddress, {
+            notificationId: notif.id,
+            type: "AGENT_BROKE",
+            title: notif.title,
+            message: notif.message,
+          });
+        }
       }
     }
 

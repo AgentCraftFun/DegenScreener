@@ -3,6 +3,7 @@ import { pool as dbPool, simulationQueries } from "@degenscreener/db";
 import { runLoop } from "./loop.js";
 import { seedRng } from "./util/rng.js";
 import { circuitBreaker } from "./agents/scheduler.js";
+import { initEventPublisher } from "./events.js";
 
 interface CliArgs {
   fastForward: number;
@@ -39,6 +40,7 @@ async function main() {
   const redis = new Redis(REDIS_URL, { lazyConnect: true });
   try {
     await redis.connect();
+    initEventPublisher(redis);
   } catch (e) {
     console.warn("[worker] redis connect failed, continuing without pubsub:", e);
   }
