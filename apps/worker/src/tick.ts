@@ -20,6 +20,8 @@ import { executeBuyTrade, executeSellTrade } from "./pool/execute-trade.js";
 import { AgentType } from "@degenscreener/shared";
 import { aggregateCandlesForTick } from "./candles/aggregator.js";
 import { Decimal } from "decimal.js";
+import { evaluateDegenAgent } from "./agents/degen-evaluator.js";
+import { evaluateDevAgent } from "./agents/dev-evaluator.js";
 
 export interface TickContext {
   useAi: boolean;
@@ -54,7 +56,18 @@ export async function runTick(
     const activeTokens = await tokenQueries.getActiveTokens();
 
     try {
-      if (agent.type === AgentType.DEV) {
+      if (ctx.useAi) {
+        if (agent.type === AgentType.DEV) {
+          const r = await evaluateDevAgent(agent);
+          if (r.launched) stats.launches++;
+          if (r.rugged) stats.rugs++;
+        } else {
+          const r = await evaluateDegenAgent(agent);
+          if (r.executed && (r.action === "BUY" || r.action === "SELL")) {
+            stats.trades++;
+          }
+        }
+      } else if (agent.type === AgentType.DEV) {
         const dec = getScriptedDevDecision(agent, activeTokens, tick);
         if (dec.kind === "LAUNCH") {
           const launched = await launchToken(
