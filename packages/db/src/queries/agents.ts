@@ -48,6 +48,19 @@ export async function updateAgentStatus(
   return row!;
 }
 
+export async function reactivateAgent(id: string, topUp: string) {
+  const [row] = await db
+    .update(agents)
+    .set({
+      balance: sql`${agents.balance} + ${topUp}`,
+      status: "ACTIVE",
+      nextEvalTick: 0,
+    })
+    .where(eq(agents.id, id))
+    .returning();
+  return row!;
+}
+
 export async function updateAgentConfig(
   id: string,
   patch: Partial<Pick<NewAgent, "name" | "personality" | "riskProfile">>,

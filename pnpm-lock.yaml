@@ -69,6 +69,12 @@ importers:
       bullmq:
         specifier: ^5.34.5
         version: 5.73.0
+      decimal.js:
+        specifier: ^10.4.3
+        version: 10.6.0
+      drizzle-orm:
+        specifier: ^0.38.3
+        version: 0.38.4(@types/pg@8.20.0)(@types/react@18.3.28)(pg@8.20.0)(react@18.3.1)
       ioredis:
         specifier: ^5.4.2
         version: 5.10.1

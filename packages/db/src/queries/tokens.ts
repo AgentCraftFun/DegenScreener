@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, asc } from "drizzle-orm";
 import { db } from "../client.js";
 import { tokens } from "../schema.js";
 
@@ -20,7 +20,11 @@ export async function getTokenByTicker(ticker: string) {
 }
 
 export async function getActiveTokens() {
-  return db.select().from(tokens).where(eq(tokens.status, "ACTIVE"));
+  return db
+    .select()
+    .from(tokens)
+    .where(eq(tokens.status, "ACTIVE"))
+    .orderBy(asc(tokens.ticker));
 }
 
 export async function updateTokenStatus(

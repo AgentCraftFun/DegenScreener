@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, asc } from "drizzle-orm";
 import { db } from "../client.js";
 import { agentHoldings } from "../schema.js";
 
@@ -24,7 +24,8 @@ export async function getHoldingsByAgent(agentId: string) {
   return db
     .select()
     .from(agentHoldings)
-    .where(eq(agentHoldings.agentId, agentId));
+    .where(eq(agentHoldings.agentId, agentId))
+    .orderBy(asc(agentHoldings.id));
 }
 
 export async function getHoldingByAgentAndToken(

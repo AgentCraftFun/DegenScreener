@@ -14,7 +14,9 @@
     "@degenscreener/shared": "workspace:*",
     "@degenscreener/pool-engine": "workspace:*",
     "bullmq": "^5.34.5",
-    "ioredis": "^5.4.2"
+    "ioredis": "^5.4.2",
+    "decimal.js": "^10.4.3",
+    "drizzle-orm": "^0.38.3"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
