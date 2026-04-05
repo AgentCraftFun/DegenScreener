@@ -1,0 +1,9 @@
+export const DEPOSIT_FEE_RATE = 0.05;
+export const WITHDRAWAL_FEE_RATE = 0.05;
+export const TRADING_FEE_RATE = 0.05;
+export const DEFAULT_TICK_INTERVAL_MS = 15000;
+export const MIN_DEPOSIT = 10;
+export const MIN_WITHDRAWAL = 10;
+export const MAX_AGENTS_PER_USER = 5;
+export const MAX_WITHDRAWALS_PER_DAY = 3;
+export const BLOCK_CONFIRMATIONS_REQUIRED = 3;
