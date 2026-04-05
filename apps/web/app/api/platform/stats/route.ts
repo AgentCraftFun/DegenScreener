@@ -3,6 +3,7 @@ import { and, eq, gte, count, sql } from "drizzle-orm";
 import { db, schema } from "@degenscreener/db";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);

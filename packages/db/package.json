@@ -21,6 +21,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/migrate.ts",
     "db:seed": "tsx src/seed.ts",
+    "db:seed-agents": "tsx src/seed-agents.ts",
     "test": "echo 'no tests yet' && exit 0"
   },
   "dependencies": {

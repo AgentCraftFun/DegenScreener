@@ -3,6 +3,7 @@ import { eq, desc } from "drizzle-orm";
 import { db, schema } from "@degenscreener/db";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET(_req: Request) {
   const rows = await db
