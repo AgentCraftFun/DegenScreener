@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { apiGet, useFetch } from "../../../hooks/useApi";
 import { SimpleChart } from "../../../components/charts/SimpleChart";
@@ -8,8 +8,8 @@ import { useWs } from "../../../providers/WebSocketProvider";
 
 const TIMEFRAMES = ["1m", "5m", "15m", "1h", "4h", "1d"];
 
-export default function TokenPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function TokenPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const [tf, setTf] = useState("15m");
   const [candles, setCandles] = useState<
     { timestamp: string; open: string; high: string; low: string; close: string; volume: string }[]

@@ -25,8 +25,6 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   if (!TF_MINUTES[tf])
     return NextResponse.json({ error: "invalid timeframe" }, { status: 400 });
 
-  const bucketMin = TF_MINUTES[tf];
-
   if (tf === "1m") {
     const rows = await db
       .select()
@@ -53,8 +51,8 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     });
   }
 
-  // Aggregate 1m candles up to higher timeframes via time_bucket
-  const bucketSec = bucketMin * 60;
+  // Aggregate 1m candles using standard SQL date_trunc / floor instead of TimescaleDB time_bucket
+  const bucketSec = TF_MINUTES[tf]! * 60;
   const result = await db.execute<{
     bucket: Date;
     open: string;
@@ -63,7 +61,8 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     close: string;
     volume: string;
   }>(
-    sql`SELECT time_bucket(${`${bucketSec} seconds`}::interval, timestamp) AS bucket,
+    sql`SELECT
+          to_timestamp(floor(extract(epoch FROM timestamp) / ${bucketSec}) * ${bucketSec}) AS bucket,
           (array_agg(open ORDER BY timestamp ASC))[1] AS open,
           MAX(high) AS high,
           MIN(low) AS low,
