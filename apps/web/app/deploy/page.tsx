@@ -59,9 +59,14 @@ export default function DeployPage() {
 
   if (!isConnected) {
     return (
-      <div className="p-4">
-        <div className="bg-bg-card border border-border-primary rounded p-6 text-center">
-          <p className="text-text-secondary">
+      <div className="flex items-center justify-center h-full p-4">
+        <div className="bg-bg-card border border-border-primary rounded-xl p-8 text-center max-w-sm">
+          <div className="w-12 h-12 rounded-full bg-accent-purple/15 flex items-center justify-center mx-auto mb-3">
+            <svg className="w-6 h-6 text-accent-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+          </div>
+          <p className="text-text-secondary text-[13px]">
             Connect your wallet to deploy an agent.
           </p>
         </div>
@@ -70,15 +75,17 @@ export default function DeployPage() {
   }
 
   return (
-    <div className="p-4 max-w-2xl mx-auto space-y-4">
-      <h1 className="text-xl font-bold">Deploy Agent</h1>
+    <div className="p-3 max-w-2xl mx-auto space-y-3">
+      <h1 className="text-lg font-bold text-text-primary">Deploy Agent</h1>
 
-      <div className="grid grid-cols-2 gap-3">
+      {/* Type Selection */}
+      <div className="grid grid-cols-2 gap-2">
         <TypeCard
           active={type === "DEV"}
           onClick={() => setType("DEV")}
           title="Dev Agent"
           desc="Launch memecoins, earn trading fees, occasionally rug."
+          icon="🛠"
           color="blue"
         />
         <TypeCard
@@ -86,41 +93,45 @@ export default function DeployPage() {
           onClick={() => setType("DEGEN")}
           title="Degen Agent"
           desc="Scan new pairs, trade based on sentiment & momentum."
+          icon="🎰"
           color="purple"
         />
       </div>
 
-      <div className="bg-bg-card border border-border-primary rounded p-4 space-y-3">
+      {/* Configuration */}
+      <div className="bg-bg-card border border-border-primary rounded-xl p-4 space-y-3">
         <Field label="Name">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full bg-bg-primary border border-border-primary rounded px-3 py-1.5 text-sm"
+            placeholder="Agent name"
+            className="w-full bg-bg-primary border border-border-primary rounded-lg px-3 py-2 text-[13px] text-text-primary placeholder-text-muted focus:outline-none focus:border-accent-blue/50 transition-colors"
           />
         </Field>
         <Field label="Handle (unique)">
-          <div className="flex items-center">
-            <span className="text-text-secondary mr-1">@</span>
+          <div className="flex items-center bg-bg-primary border border-border-primary rounded-lg overflow-hidden focus-within:border-accent-blue/50 transition-colors">
+            <span className="text-text-muted pl-3 text-[13px]">@</span>
             <input
               value={handle}
               onChange={(e) => setHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, ""))}
-              className="w-full bg-bg-primary border border-border-primary rounded px-3 py-1.5 text-sm"
+              placeholder="unique_handle"
+              className="w-full bg-transparent px-2 py-2 text-[13px] text-text-primary placeholder-text-muted focus:outline-none"
             />
           </div>
         </Field>
-        <Field label={`Initial Funding (Balance: ${Number(internalBalance).toFixed(2)})`}>
+        <Field label={`Initial Funding (Balance: ${Number(internalBalance).toFixed(2)} DSCREEN)`}>
           <input
             type="number"
             value={funding}
             onChange={(e) => setFunding(e.target.value)}
-            className="w-full bg-bg-primary border border-border-primary rounded px-3 py-1.5 text-sm"
+            className="w-full bg-bg-primary border border-border-primary rounded-lg px-3 py-2 text-[13px] text-text-primary focus:outline-none focus:border-accent-blue/50 transition-colors"
           />
         </Field>
         <Field label="Personality">
           <select
             value={personality}
             onChange={(e) => setPersonality(e.target.value)}
-            className="w-full bg-bg-primary border border-border-primary rounded px-3 py-1.5 text-sm"
+            className="w-full bg-bg-primary border border-border-primary rounded-lg px-3 py-2 text-[13px] text-text-primary focus:outline-none focus:border-accent-blue/50 transition-colors"
           >
             <option value="ANALYTICAL">Analytical</option>
             <option value="HYPE_BEAST">Hype Beast</option>
@@ -134,7 +145,7 @@ export default function DeployPage() {
             <select
               value={riskProfile}
               onChange={(e) => setRiskProfile(e.target.value)}
-              className="w-full bg-bg-primary border border-border-primary rounded px-3 py-1.5 text-sm"
+              className="w-full bg-bg-primary border border-border-primary rounded-lg px-3 py-2 text-[13px] text-text-primary focus:outline-none focus:border-accent-blue/50 transition-colors"
             >
               <option value="CONSERVATIVE">Conservative (1-5% position, -30% SL)</option>
               <option value="MODERATE">Moderate (5-15% position, -50% SL)</option>
@@ -148,7 +159,7 @@ export default function DeployPage() {
               <select
                 value={launchStyle}
                 onChange={(e) => setLaunchStyle(e.target.value)}
-                className="w-full bg-bg-primary border border-border-primary rounded px-3 py-1.5 text-sm"
+                className="w-full bg-bg-primary border border-border-primary rounded-lg px-3 py-2 text-[13px] text-text-primary focus:outline-none focus:border-accent-blue/50 transition-colors"
               >
                 <option value="MILD">Mild</option>
                 <option value="SPICY">Spicy</option>
@@ -159,7 +170,7 @@ export default function DeployPage() {
               <select
                 value={launchFreq}
                 onChange={(e) => setLaunchFreq(e.target.value)}
-                className="w-full bg-bg-primary border border-border-primary rounded px-3 py-1.5 text-sm"
+                className="w-full bg-bg-primary border border-border-primary rounded-lg px-3 py-2 text-[13px] text-text-primary focus:outline-none focus:border-accent-blue/50 transition-colors"
               >
                 <option value="SLOW">Slow</option>
                 <option value="MEDIUM">Medium</option>
@@ -175,28 +186,33 @@ export default function DeployPage() {
                 onChange={(e) => setRugProb(Number(e.target.value))}
                 className="w-full"
               />
+              <div className="flex justify-between text-[10px] text-text-muted mt-0.5">
+                <span>0% (Honest)</span>
+                <span>50% (Degen)</span>
+              </div>
             </Field>
           </>
         )}
       </div>
 
-      <div className="bg-bg-card border border-border-primary rounded p-4 text-xs space-y-1">
+      {/* Cost Breakdown */}
+      <div className="bg-bg-card border border-border-primary rounded-xl p-4 text-[12px] space-y-1.5">
         <div className="flex justify-between">
-          <span className="text-text-secondary">Funding</span>
-          <span className="font-mono">{Number(funding).toFixed(2)} DSCREEN</span>
+          <span className="text-text-muted">Funding</span>
+          <span className="font-mono text-text-primary">{Number(funding).toFixed(2)} DSCREEN</span>
         </div>
-        <div className="flex justify-between text-text-secondary">
+        <div className="flex justify-between text-text-muted">
           <span>Deployment fee (5%)</span>
           <span className="font-mono">{fee.toFixed(2)}</span>
         </div>
-        <div className="flex justify-between font-semibold border-t border-border-primary pt-1 mt-1">
-          <span>Agent starts with</span>
-          <span className="font-mono text-accent-green">{net.toFixed(2)}</span>
+        <div className="flex justify-between font-semibold border-t border-border-primary pt-1.5 mt-1.5">
+          <span className="text-text-primary">Agent starts with</span>
+          <span className="font-mono text-accent-green">{net.toFixed(2)} DSCREEN</span>
         </div>
       </div>
 
       {error && (
-        <div className="bg-accent-red/20 text-accent-red text-sm p-3 rounded">
+        <div className="bg-accent-red/10 border border-accent-red/20 text-accent-red text-[12px] p-3 rounded-xl">
           {error}
         </div>
       )}
@@ -204,9 +220,19 @@ export default function DeployPage() {
       <button
         onClick={submit}
         disabled={submitting || !name || !handle || Number(funding) <= 0}
-        className="w-full bg-accent-blue text-white py-2.5 rounded font-semibold hover:opacity-90 disabled:opacity-50"
+        className="w-full bg-gradient-to-r from-accent-blue to-accent-cyan text-white py-2.5 rounded-xl font-semibold text-[13px] hover:opacity-90 disabled:opacity-40 transition-opacity shadow-glow"
       >
-        {submitting ? "Deploying..." : "Deploy Agent"}
+        {submitting ? (
+          <span className="flex items-center justify-center gap-2">
+            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Deploying...
+          </span>
+        ) : (
+          "Deploy Agent"
+        )}
       </button>
     </div>
   );
@@ -217,26 +243,32 @@ function TypeCard({
   onClick,
   title,
   desc,
+  icon,
   color,
 }: {
   active: boolean;
   onClick: () => void;
   title: string;
   desc: string;
+  icon: string;
   color: "blue" | "purple";
 }) {
-  const accent = color === "blue" ? "accent-blue" : "accent-purple";
+  const borderColor = color === "blue" ? "border-accent-blue/40" : "border-accent-purple/40";
+  const bgColor = color === "blue" ? "bg-accent-blue/10" : "bg-accent-purple/10";
   return (
     <button
       onClick={onClick}
-      className={`text-left p-4 rounded border transition-all ${
+      className={`text-left p-4 rounded-xl border transition-all ${
         active
-          ? `bg-bg-card border-${accent}`
-          : "bg-bg-card border-border-primary hover:border-border-primary"
+          ? `${bgColor} ${borderColor} shadow-glow`
+          : "bg-bg-card border-border-primary hover:border-border-hover"
       }`}
     >
-      <div className="font-semibold">{title}</div>
-      <div className="text-xs text-text-secondary mt-1">{desc}</div>
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-lg">{icon}</span>
+        <span className="font-semibold text-[13px] text-text-primary">{title}</span>
+      </div>
+      <div className="text-[11px] text-text-muted">{desc}</div>
     </button>
   );
 }
@@ -250,7 +282,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="text-xs text-text-secondary block mb-1">{label}</label>
+      <label className="text-[11px] text-text-muted block mb-1.5 uppercase tracking-wider">{label}</label>
       {children}
     </div>
   );

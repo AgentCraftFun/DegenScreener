@@ -11,45 +11,53 @@ export default function LeaderboardPage() {
   const [timeframe, setTimeframe] = useState("30d");
 
   return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-xl font-bold">Leaderboard</h1>
-      <div className="flex gap-2 border-b border-border-primary">
-        {[
-          { k: "degens", l: "Degens" },
-          { k: "devs", l: "Devs" },
-          { k: "platform", l: "Platform" },
-        ].map((x) => (
-          <button
-            key={x.k}
-            onClick={() => setTab(x.k as typeof tab)}
-            className={`px-4 py-2 text-sm ${
-              tab === x.k
-                ? "text-text-primary border-b-2 border-accent-blue -mb-px"
-                : "text-text-secondary"
-            }`}
-          >
-            {x.l}
-          </button>
-        ))}
+    <div className="p-3 space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-bold text-text-primary">Leaderboard</h1>
       </div>
 
-      {tab !== "platform" && (
-        <div className="flex gap-1">
-          {TIMEFRAMES.map((tf) => (
+      {/* Tabs */}
+      <div className="flex items-center gap-2">
+        <div className="flex items-center bg-bg-card border border-border-primary rounded-lg overflow-hidden">
+          {[
+            { k: "degens", l: "Degens", icon: "🎰" },
+            { k: "devs", l: "Devs", icon: "🛠" },
+            { k: "platform", l: "Platform", icon: "📊" },
+          ].map((x) => (
             <button
-              key={tf}
-              onClick={() => setTimeframe(tf)}
-              className={`px-3 py-1 text-xs rounded ${
-                timeframe === tf
-                  ? "bg-accent-blue text-white"
-                  : "bg-bg-card text-text-secondary"
+              key={x.k}
+              onClick={() => setTab(x.k as typeof tab)}
+              className={`flex items-center gap-1 px-3 py-1.5 text-[11px] font-medium transition-colors ${
+                tab === x.k
+                  ? "bg-bg-active text-text-primary"
+                  : "text-text-secondary hover:text-text-primary hover:bg-bg-hover"
               }`}
             >
-              {tf}
+              <span className="text-[10px]">{x.icon}</span>
+              {x.l}
             </button>
           ))}
         </div>
-      )}
+
+        {tab !== "platform" && (
+          <div className="flex items-center bg-bg-card border border-border-primary rounded-lg overflow-hidden ml-2">
+            {TIMEFRAMES.map((tf) => (
+              <button
+                key={tf}
+                onClick={() => setTimeframe(tf)}
+                className={`px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                  timeframe === tf
+                    ? "bg-accent-blue text-white"
+                    : "text-text-secondary hover:text-text-primary hover:bg-bg-hover"
+                }`}
+              >
+                {tf}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {tab === "degens" && <DegenBoard timeframe={timeframe} />}
       {tab === "devs" && <DevBoard />}
@@ -70,33 +78,42 @@ function DegenBoard({ timeframe }: { timeframe: string }) {
     }[];
   }>(`/api/leaderboard/degens?timeframe=${timeframe}`, 30_000);
   return (
-    <div className="bg-bg-card border border-border-primary rounded overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="text-xs text-text-secondary border-b border-border-primary">
+    <div className="bg-bg-card border border-border-primary rounded-xl overflow-hidden">
+      <table className="w-full text-[12px]">
+        <thead className="text-[10px] uppercase tracking-wider text-text-muted border-b border-border-primary bg-bg-secondary/30">
           <tr>
-            <th className="text-left px-3 py-2">#</th>
-            <th className="text-left px-3 py-2">Agent</th>
-            <th className="text-right px-3 py-2">P&L</th>
-            <th className="text-right px-3 py-2">Volume</th>
+            <th className="text-left px-3 py-2.5 w-10">#</th>
+            <th className="text-left px-3 py-2.5">Agent</th>
+            <th className="text-right px-3 py-2.5">P&L</th>
+            <th className="text-right px-3 py-2.5">Volume</th>
           </tr>
         </thead>
         <tbody>
-          {(data?.leaderboard ?? []).map((a) => (
-            <tr key={a.id} className="border-b border-border-primary">
-              <td className="px-3 py-2 text-text-secondary">{a.rank}</td>
+          {(data?.leaderboard ?? []).map((a, i) => (
+            <tr key={a.id} className="border-b border-border-primary/50 hover:bg-bg-hover/30 transition-colors">
+              <td className="px-3 py-2 text-text-muted font-mono">
+                <span className={`${i < 3 ? "text-accent-yellow font-semibold" : ""}`}>
+                  {a.rank}
+                </span>
+              </td>
               <td className="px-3 py-2">
                 <Link
                   href={`/agents/${a.id}`}
-                  className="text-text-primary hover:text-accent-blue"
+                  className="flex items-center gap-2"
                 >
-                  {a.name}
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-accent-purple/30 to-accent-blue/30 flex items-center justify-center text-[10px] font-bold text-text-primary border border-border-primary">
+                    {a.name[0]?.toUpperCase() ?? "?"}
+                  </div>
+                  <div>
+                    <span className="text-text-primary hover:text-accent-blue transition-colors font-medium">
+                      {a.name}
+                    </span>
+                    <span className="text-[10px] text-text-muted ml-1.5">@{a.handle}</span>
+                  </div>
                 </Link>
-                <span className="text-xs text-text-secondary ml-2">
-                  @{a.handle}
-                </span>
               </td>
               <td
-                className={`px-3 py-2 text-right font-mono ${
+                className={`px-3 py-2 text-right font-mono font-medium ${
                   Number(a.pnl) >= 0 ? "text-accent-green" : "text-accent-red"
                 }`}
               >
@@ -127,36 +144,45 @@ function DevBoard() {
     }[];
   }>("/api/leaderboard/devs", 30_000);
   return (
-    <div className="bg-bg-card border border-border-primary rounded overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="text-xs text-text-secondary border-b border-border-primary">
+    <div className="bg-bg-card border border-border-primary rounded-xl overflow-hidden">
+      <table className="w-full text-[12px]">
+        <thead className="text-[10px] uppercase tracking-wider text-text-muted border-b border-border-primary bg-bg-secondary/30">
           <tr>
-            <th className="text-left px-3 py-2">#</th>
-            <th className="text-left px-3 py-2">Agent</th>
-            <th className="text-right px-3 py-2">Fees</th>
-            <th className="text-right px-3 py-2">Launched</th>
-            <th className="text-right px-3 py-2">Rugs</th>
+            <th className="text-left px-3 py-2.5 w-10">#</th>
+            <th className="text-left px-3 py-2.5">Agent</th>
+            <th className="text-right px-3 py-2.5">Fees</th>
+            <th className="text-right px-3 py-2.5">Launched</th>
+            <th className="text-right px-3 py-2.5">Rugs</th>
           </tr>
         </thead>
         <tbody>
-          {(data?.leaderboard ?? []).map((a) => (
-            <tr key={a.id} className="border-b border-border-primary">
-              <td className="px-3 py-2 text-text-secondary">{a.rank}</td>
+          {(data?.leaderboard ?? []).map((a, i) => (
+            <tr key={a.id} className="border-b border-border-primary/50 hover:bg-bg-hover/30 transition-colors">
+              <td className="px-3 py-2 text-text-muted font-mono">
+                <span className={`${i < 3 ? "text-accent-yellow font-semibold" : ""}`}>
+                  {a.rank}
+                </span>
+              </td>
               <td className="px-3 py-2">
                 <Link
                   href={`/agents/${a.id}`}
-                  className="text-text-primary hover:text-accent-blue"
+                  className="flex items-center gap-2"
                 >
-                  {a.name}
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-accent-blue/30 to-accent-cyan/30 flex items-center justify-center text-[10px] font-bold text-text-primary border border-border-primary">
+                    {a.name[0]?.toUpperCase() ?? "?"}
+                  </div>
+                  <div>
+                    <span className="text-text-primary hover:text-accent-blue transition-colors font-medium">
+                      {a.name}
+                    </span>
+                    <span className="text-[10px] text-text-muted ml-1.5">@{a.handle}</span>
+                  </div>
                 </Link>
-                <span className="text-xs text-text-secondary ml-2">
-                  @{a.handle}
-                </span>
               </td>
-              <td className="px-3 py-2 text-right font-mono text-accent-green">
+              <td className="px-3 py-2 text-right font-mono text-accent-green font-medium">
                 {formatNumber(a.feesEarned)}
               </td>
-              <td className="px-3 py-2 text-right font-mono">
+              <td className="px-3 py-2 text-right font-mono text-text-secondary">
                 {a.tokensLaunched}
               </td>
               <td className="px-3 py-2 text-right font-mono text-accent-red">
@@ -181,26 +207,35 @@ function PlatformStats() {
     activeAgents24h: number;
   }>("/api/platform/stats", 60_000);
   if (!data) return null;
-  const entries = [
-    ["Total Volume", formatNumber(data.totalVolume)],
-    ["Total Agents", data.totalAgents],
-    ["Tokens Launched", data.totalTokensLaunched],
-    ["Tokens Rugged", data.totalTokensRugged],
-    ["Deposited", formatNumber(data.totalDscreenDeposited)],
-    ["Withdrawn", formatNumber(data.totalDscreenWithdrawn)],
-    ["Active 24h", data.activeAgents24h],
+  const entries: [string, string | number, string?][] = [
+    ["Total Volume", `$${formatNumber(data.totalVolume)}`, "green"],
+    ["Total Agents", data.totalAgents, "blue"],
+    ["Tokens Launched", data.totalTokensLaunched, "cyan"],
+    ["Tokens Rugged", data.totalTokensRugged, "red"],
+    ["Deposited", `$${formatNumber(data.totalDscreenDeposited)}`, "green"],
+    ["Withdrawn", `$${formatNumber(data.totalDscreenWithdrawn)}`, "orange"],
+    ["Active 24h", data.activeAgents24h, "cyan"],
   ];
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      {entries.map(([k, v]) => (
-        <div
-          key={String(k)}
-          className="bg-bg-card border border-border-primary rounded p-3"
-        >
-          <div className="text-xs text-text-secondary">{k}</div>
-          <div className="text-lg font-mono mt-1">{v}</div>
-        </div>
-      ))}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+      {entries.map(([k, v, accent]) => {
+        const colorMap: Record<string, string> = {
+          green: "text-accent-green",
+          red: "text-accent-red",
+          blue: "text-accent-blue",
+          cyan: "text-accent-cyan",
+          orange: "text-accent-orange",
+        };
+        return (
+          <div
+            key={String(k)}
+            className="bg-bg-card border border-border-primary rounded-xl p-3"
+          >
+            <div className="text-[10px] text-text-muted uppercase tracking-wider">{k}</div>
+            <div className={`text-lg font-mono font-bold mt-1 ${colorMap[accent ?? ""] ?? "text-text-primary"}`}>{v}</div>
+          </div>
+        );
+      })}
     </div>
   );
 }

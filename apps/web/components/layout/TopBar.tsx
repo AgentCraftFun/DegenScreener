@@ -14,7 +14,6 @@ export function TopBar() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // try to fetch profile on mount (silent)
     apiGet<{ user: { id: string; walletAddress: string; internalBalance: string } }>(
       "/api/user/profile",
     )
@@ -25,7 +24,6 @@ export function TopBar() {
   const handleConnect = async () => {
     setLoading(true);
     try {
-      // Dev-only: simulate wallet connect via mock API
       alert(
         "Connect wallet via MetaMask/RainbowKit. For testing, use the smoke test script to create a session.",
       );
@@ -47,38 +45,54 @@ export function TopBar() {
         : "bg-accent-red";
 
   return (
-    <div className="border-b border-border-primary bg-bg-secondary">
+    <div className="bg-bg-secondary border-b border-border-primary">
+      {/* Ticker */}
       <TickerMarquee />
-      <div className="flex items-center gap-3 px-4 py-2">
-        <div className="flex items-center gap-2 text-xs text-text-secondary">
-          <span className={`w-2 h-2 rounded-full ${statusColor}`} />
-          <span className="hidden sm:inline">{status}</span>
+
+      {/* Main bar */}
+      <div className="flex items-center gap-2 px-3 py-1.5">
+        {/* Status */}
+        <div className="flex items-center gap-1.5 text-[11px] text-text-muted mr-1">
+          <span className={`w-1.5 h-1.5 rounded-full ${statusColor}`} />
+          <span className="hidden sm:inline capitalize">{status}</span>
         </div>
-        <div className="flex-1 max-w-xl">
+
+        {/* Search */}
+        <div className="flex-1 max-w-lg">
           <SearchBar />
         </div>
-        <NotificationBell />
-        {isConnected ? (
-          <div className="flex items-center gap-2 text-sm">
-            <span className="font-mono text-text-secondary hidden md:inline">
-              {Number(internalBalance).toFixed(2)} DSCREEN
-            </span>
+
+        {/* Right side */}
+        <div className="flex items-center gap-1.5 ml-auto">
+          <NotificationBell />
+
+          {isConnected ? (
+            <div className="flex items-center gap-1.5">
+              <div className="hidden md:flex items-center gap-1.5 bg-bg-card border border-border-primary rounded-lg px-2.5 py-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent-green" />
+                <span className="font-mono text-[11px] text-accent-green font-medium">
+                  {Number(internalBalance).toFixed(2)}
+                </span>
+                <span className="text-[10px] text-text-muted">DSCREEN</span>
+              </div>
+              <button
+                onClick={handleDisconnect}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-bg-card border border-border-primary rounded-lg text-text-primary hover:border-border-hover hover:bg-bg-hover text-[11px] font-mono transition-colors"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-accent-green" />
+                {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
+              </button>
+            </div>
+          ) : (
             <button
-              onClick={handleDisconnect}
-              className="px-3 py-1.5 bg-bg-card border border-border-primary rounded text-text-primary hover:border-accent-blue transition-colors text-xs font-mono"
+              onClick={handleConnect}
+              disabled={loading}
+              className="px-4 py-1.5 bg-gradient-to-r from-accent-blue to-accent-cyan text-white rounded-lg text-[12px] font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 shadow-glow"
             >
-              {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
+              Connect Wallet
             </button>
-          </div>
-        ) : (
-          <button
-            onClick={handleConnect}
-            disabled={loading}
-            className="px-4 py-1.5 bg-accent-blue text-white rounded text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
-          >
-            Connect Wallet
-          </button>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

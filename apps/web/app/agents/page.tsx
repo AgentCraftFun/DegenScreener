@@ -26,21 +26,22 @@ export default function AgentsPage() {
   );
 
   return (
-    <div className="p-4">
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="flex gap-1 border-b border-border-primary">
+    <div className="p-3 space-y-3">
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center bg-bg-card border border-border-primary rounded-lg overflow-hidden">
           {[
-            { k: "all", l: "All" },
-            { k: "DEV", l: "Dev" },
-            { k: "DEGEN", l: "Degen" },
+            { k: "all", l: "All Agents" },
+            { k: "DEV", l: "Devs" },
+            { k: "DEGEN", l: "Degens" },
           ].map((x) => (
             <button
               key={x.k}
               onClick={() => setTypeFilter(x.k)}
-              className={`px-3 py-1.5 text-sm ${
+              className={`px-3 py-1.5 text-[11px] font-medium transition-colors ${
                 typeFilter === x.k
-                  ? "text-text-primary border-b-2 border-accent-blue -mb-px"
-                  : "text-text-secondary hover:text-text-primary"
+                  ? "bg-bg-active text-text-primary"
+                  : "text-text-secondary hover:text-text-primary hover:bg-bg-hover"
               }`}
             >
               {x.l}
@@ -50,7 +51,7 @@ export default function AgentsPage() {
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value)}
-          className="bg-bg-card border border-border-primary rounded px-3 py-1.5 text-sm ml-auto"
+          className="bg-bg-card border border-border-primary rounded-lg px-3 py-1.5 text-[11px] text-text-secondary ml-auto focus:outline-none focus:border-accent-blue/50"
         >
           <option value="pnl">Best P&L</option>
           <option value="balance">Balance</option>
@@ -58,74 +59,98 @@ export default function AgentsPage() {
           <option value="created_at">Newest</option>
         </select>
       </div>
+
+      {/* Grid */}
       {loading ? (
-        <div className="text-center text-text-secondary py-8">Loading...</div>
+        <div className="flex items-center justify-center py-12 text-text-muted text-[12px]">
+          <svg className="w-4 h-4 animate-spin mr-2" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          Loading...
+        </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
           {(data?.agents ?? []).map((a) => (
             <Link
               key={a.id}
               href={`/agents/${a.id}`}
-              className="bg-bg-card border border-border-primary rounded p-4 hover:border-accent-blue transition-colors"
+              className="bg-bg-card border border-border-primary rounded-xl p-3.5 hover:border-border-hover hover:bg-bg-hover/30 transition-all group"
             >
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="font-semibold text-text-primary">{a.name}</div>
-                  <div className="text-xs text-text-secondary">@{a.handle}</div>
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold border ${
+                    a.type === "DEV"
+                      ? "bg-accent-blue/15 text-accent-blue border-accent-blue/20"
+                      : "bg-accent-purple/15 text-accent-purple border-accent-purple/20"
+                  }`}>
+                    {a.name[0]?.toUpperCase() ?? "?"}
+                  </div>
+                  <div>
+                    <div className="font-semibold text-[13px] text-text-primary group-hover:text-accent-blue transition-colors">
+                      {a.name}
+                    </div>
+                    <div className="text-[10px] text-text-muted">@{a.handle}</div>
+                  </div>
                 </div>
                 <span
-                  className={`text-xs px-2 py-0.5 rounded ${
+                  className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium uppercase tracking-wider ${
                     a.type === "DEV"
-                      ? "bg-accent-blue/20 text-accent-blue"
-                      : "bg-accent-purple/20 text-accent-purple"
+                      ? "bg-accent-blue/15 text-accent-blue"
+                      : "bg-accent-purple/15 text-accent-purple"
                   }`}
                 >
                   {a.type}
                 </span>
               </div>
-              <div className="mt-3 flex items-center justify-between text-xs">
-                <span className="text-text-secondary">P&L</span>
-                <span
-                  className={`font-mono ${
-                    Number(a.totalPnl) >= 0
-                      ? "text-accent-green"
-                      : "text-accent-red"
-                  }`}
-                >
-                  {Number(a.totalPnl) >= 0 ? "+" : ""}
-                  {formatNumber(a.totalPnl)}
-                </span>
-              </div>
-              <div className="mt-1 flex items-center justify-between text-xs">
-                <span className="text-text-secondary">Volume</span>
-                <span className="font-mono text-text-secondary">
-                  {formatNumber(a.totalVolume)}
-                </span>
-              </div>
-              {a.type === "DEV" ? (
-                <div className="mt-1 flex items-center justify-between text-xs">
-                  <span className="text-text-secondary">Launched / Rugged</span>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-text-muted">P&L</span>
+                  <span
+                    className={`font-mono font-medium ${
+                      Number(a.totalPnl) >= 0 ? "text-accent-green" : "text-accent-red"
+                    }`}
+                  >
+                    {Number(a.totalPnl) >= 0 ? "+" : ""}
+                    {formatNumber(a.totalPnl)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-text-muted">Volume</span>
                   <span className="font-mono text-text-secondary">
-                    {a.tokensLaunched} / {a.rugCount}
+                    {formatNumber(a.totalVolume)}
                   </span>
                 </div>
-              ) : null}
-              {a.balance !== undefined && (
-                <div className="mt-1 flex items-center justify-between text-xs pt-2 border-t border-border-primary">
-                  <span className="text-text-secondary">Balance</span>
-                  <span className="font-mono text-accent-blue">
-                    {formatNumber(a.balance)}
-                  </span>
-                </div>
-              )}
-              <div
-                className={`mt-2 text-[10px] inline-block px-2 py-0.5 rounded ${
-                  a.status === "ACTIVE"
-                    ? "bg-accent-green/20 text-accent-green"
-                    : "bg-accent-red/20 text-accent-red"
-                }`}
-              >
-                {a.status}
+                {a.type === "DEV" && (
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-text-muted">Launched / Rugged</span>
+                    <span className="font-mono text-text-secondary">
+                      {a.tokensLaunched} / <span className="text-accent-red">{a.rugCount}</span>
+                    </span>
+                  </div>
+                )}
+                {a.balance !== undefined && (
+                  <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-border-primary/50">
+                    <span className="text-text-muted">Balance</span>
+                    <span className="font-mono text-accent-cyan font-medium">
+                      {formatNumber(a.balance)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-2.5 flex items-center gap-1.5">
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    a.status === "ACTIVE" ? "bg-accent-green" : "bg-accent-red"
+                  }`}
+                />
+                <span className={`text-[10px] font-medium ${
+                  a.status === "ACTIVE" ? "text-accent-green" : "text-accent-red"
+                }`}>
+                  {a.status}
+                </span>
               </div>
             </Link>
           ))}

@@ -35,35 +35,67 @@ export default function DashboardPage() {
   const topDevs = (devLb?.leaderboard ?? []).slice(0, 5);
 
   return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-xl font-bold text-text-primary">Dashboard</h1>
-
+    <div className="p-3 space-y-3">
+      {/* Stats Grid */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <StatCard label="Total Volume" value={formatNumber(stats.totalVolume)} />
-          <StatCard label="Agents" value={String(stats.totalAgents)} />
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          <StatCard
+            label="Total Volume"
+            value={`$${formatNumber(stats.totalVolume)}`}
+            icon={
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            }
+            accent="green"
+          />
+          <StatCard
+            label="Active Agents"
+            value={String(stats.totalAgents)}
+            icon={
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            }
+          />
           <StatCard
             label="Tokens Launched"
             value={String(stats.totalTokensLaunched)}
+            icon={
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+              </svg>
+            }
           />
           <StatCard
             label="Tokens Rugged"
             value={String(stats.totalTokensRugged)}
+            icon={
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              </svg>
+            }
             accent="red"
           />
           <StatCard
             label="Active 24h"
             value={String(stats.activeAgents24h)}
-            accent="green"
+            icon={
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+              </svg>
+            }
+            accent="cyan"
           />
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Panel title="Top Degen Agents">
+      {/* Agent Leaderboards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <Panel title="Top Degen Agents" icon="🎰" href="/leaderboard">
           <AgentMiniList agents={topDegens} />
         </Panel>
-        <Panel title="Top Dev Agents">
+        <Panel title="Top Dev Agents" icon="🛠" href="/leaderboard">
           <AgentMiniList agents={topDevs} />
         </Panel>
       </div>
@@ -74,66 +106,105 @@ export default function DashboardPage() {
 function StatCard({
   label,
   value,
+  icon,
   accent,
 }: {
   label: string;
   value: string;
-  accent?: "green" | "red";
+  icon: React.ReactNode;
+  accent?: "green" | "red" | "cyan";
 }) {
-  const color =
-    accent === "green"
-      ? "text-accent-green"
+  const colorMap = {
+    green: "text-accent-green border-accent-green/20",
+    red: "text-accent-red border-accent-red/20",
+    cyan: "text-accent-cyan border-accent-cyan/20",
+  };
+  const color = accent ? colorMap[accent] : "text-text-primary border-border-primary";
+  const iconColor = accent
+    ? accent === "green"
+      ? "text-accent-green bg-accent-green/10"
       : accent === "red"
-        ? "text-accent-red"
-        : "text-text-primary";
+        ? "text-accent-red bg-accent-red/10"
+        : "text-accent-cyan bg-accent-cyan/10"
+    : "text-accent-blue bg-accent-blue/10";
+
   return (
-    <div className="bg-bg-card border border-border-primary rounded p-3">
-      <div className="text-xs text-text-secondary">{label}</div>
-      <div className={`text-lg font-mono mt-1 ${color}`}>{value}</div>
+    <div className={`bg-bg-card border rounded-xl p-3 ${color.split(" ")[1] ?? "border-border-primary"}`}>
+      <div className="flex items-center gap-2 mb-2">
+        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${iconColor}`}>
+          {icon}
+        </div>
+        <span className="text-[10px] uppercase tracking-wider text-text-muted">{label}</span>
+      </div>
+      <div className={`text-lg font-mono font-bold ${color.split(" ")[0]}`}>{value}</div>
     </div>
   );
 }
 
 function Panel({
   title,
+  icon,
+  href,
   children,
 }: {
   title: string;
+  icon: string;
+  href: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-bg-card border border-border-primary rounded p-4">
-      <h2 className="text-sm font-semibold text-text-primary mb-3">{title}</h2>
-      {children}
+    <div className="bg-bg-card border border-border-primary rounded-xl overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border-primary bg-bg-secondary/30">
+        <div className="flex items-center gap-2">
+          <span className="text-sm">{icon}</span>
+          <h2 className="text-[13px] font-semibold text-text-primary">{title}</h2>
+        </div>
+        <Link href={href} className="text-[11px] text-accent-blue hover:text-accent-blue/80 transition-colors">
+          View All →
+        </Link>
+      </div>
+      <div className="p-2">{children}</div>
     </div>
   );
 }
 
 function AgentMiniList({ agents }: { agents: TopAgent[] }) {
   if (agents.length === 0) {
-    return <div className="text-xs text-text-secondary">No agents yet</div>;
+    return (
+      <div className="text-[12px] text-text-muted p-4 text-center">
+        No agents yet
+      </div>
+    );
   }
   return (
-    <div className="space-y-2">
-      {agents.map((a) => (
+    <div>
+      {agents.map((a, i) => (
         <Link
           key={a.id}
           href={`/agents/${a.id}`}
-          className="flex items-center justify-between text-sm p-2 rounded hover:bg-bg-secondary"
+          className="flex items-center justify-between text-[12px] p-2.5 rounded-lg hover:bg-bg-hover transition-colors"
         >
-          <div className="flex items-center gap-2">
-            <span className="text-text-secondary text-xs w-5">#{a.rank}</span>
+          <div className="flex items-center gap-2.5">
+            <span className="text-text-muted font-mono w-5 text-right text-[11px]">#{a.rank}</span>
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-accent-purple/30 to-accent-blue/30 flex items-center justify-center text-[10px] font-bold text-text-primary border border-border-primary">
+              {a.name[0]?.toUpperCase() ?? "?"}
+            </div>
             <div>
-              <div className="text-text-primary">{a.name}</div>
-              <div className="text-xs text-text-secondary">@{a.handle}</div>
+              <div className="text-text-primary font-medium">{a.name}</div>
+              <div className="text-[10px] text-text-muted">@{a.handle}</div>
             </div>
           </div>
-          <div
-            className={`font-mono text-xs ${
-              Number(a.pnl) >= 0 ? "text-accent-green" : "text-accent-red"
-            }`}
-          >
-            {formatPct(a.pnl)}
+          <div className="text-right">
+            <div
+              className={`font-mono font-medium ${
+                Number(a.pnl) >= 0 ? "text-accent-green" : "text-accent-red"
+              }`}
+            >
+              {formatPct(a.pnl)}
+            </div>
+            <div className="text-[10px] text-text-muted font-mono">
+              Vol: {formatNumber(a.totalVolume)}
+            </div>
           </div>
         </Link>
       ))}

@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useFetch } from "../../hooks/useApi";
 import { formatPrice, formatPct } from "../../lib/format";
 
@@ -18,21 +19,31 @@ export function TickerMarquee() {
   const doubled = [...tokens, ...tokens];
 
   return (
-    <div className="overflow-hidden border-b border-border-primary py-1.5">
-      <div className="flex gap-6 animate-marquee whitespace-nowrap">
+    <div className="overflow-hidden border-b border-border-primary bg-bg-primary/50">
+      <div className="flex gap-0 animate-marquee whitespace-nowrap py-1">
         {doubled.map((t, i) => {
           const pct = Number(t.change24hPct);
-          const color =
-            pct > 0 ? "text-accent-green" : pct < 0 ? "text-accent-red" : "text-text-secondary";
+          const isUp = pct > 0;
+          const isDown = pct < 0;
           return (
-            <div
+            <Link
               key={`${t.id}-${i}`}
-              className="flex items-center gap-2 text-xs font-mono"
+              href={`/tokens/${t.id}`}
+              className="inline-flex items-center gap-1.5 px-3 py-0.5 text-[11px] font-mono hover:bg-bg-hover/50 transition-colors rounded"
             >
-              <span className="text-text-primary font-semibold">{t.ticker}</span>
-              <span className="text-text-secondary">{formatPrice(t.price)}</span>
-              <span className={color}>{formatPct(t.change24hPct)}</span>
-            </div>
+              <span className={`inline-flex items-center justify-center w-4 h-4 rounded text-[9px] font-bold ${
+                isUp ? "bg-accent-green/20 text-accent-green" : isDown ? "bg-accent-red/20 text-accent-red" : "bg-bg-card text-text-secondary"
+              }`}>
+                {isUp ? "+" : isDown ? "-" : "~"}
+              </span>
+              <span className="font-semibold text-text-primary">{t.ticker}</span>
+              <span className="text-text-muted">{formatPrice(t.price)}</span>
+              <span className={`font-medium ${
+                isUp ? "text-accent-green" : isDown ? "text-accent-red" : "text-text-secondary"
+              }`}>
+                {formatPct(t.change24hPct)}
+              </span>
+            </Link>
           );
         })}
       </div>
