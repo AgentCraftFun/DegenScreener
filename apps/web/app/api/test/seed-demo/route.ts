@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db, schema } from "@degenscreener/db";
+import { db, schema, runMigrations } from "@degenscreener/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,6 +31,9 @@ function pick<T>(arr: T[]): T {
 
 export async function POST() {
   try {
+    // Run migrations first to ensure all tables exist
+    await runMigrations();
+
     // Clear all tables
     await db.delete(agentCostTracking);
     await db.delete(notifications);

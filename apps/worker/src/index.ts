@@ -1,11 +1,5 @@
 import { Redis } from "ioredis";
-import { pool as dbPool, simulationQueries } from "@degenscreener/db";
-// Dynamic import to avoid bundling migrate.ts into web app
-async function runMigrations() {
-  // @ts-expect-error dynamic path import
-  const mod = await import("../../packages/db/dist/migrate.js");
-  return mod.runMigrations();
-}
+import { pool as dbPool, simulationQueries, runMigrations } from "@degenscreener/db";
 import { runLoop } from "./loop.js";
 import { seedRng } from "./util/rng.js";
 import { circuitBreaker } from "./agents/scheduler.js";
