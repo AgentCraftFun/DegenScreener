@@ -4,6 +4,7 @@ import { eq, desc } from "drizzle-orm";
 import { db, schema } from "@degenscreener/db";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const [pool] = await db

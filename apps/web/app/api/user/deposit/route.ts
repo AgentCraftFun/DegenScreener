@@ -7,6 +7,7 @@ import { DEPOSIT_FEE_RATE, MIN_DEPOSIT } from "@degenscreener/shared";
 import { requireAuth, parseBody, checkRateLimit } from "../../../../lib/api";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const BodySchema = z.object({
   amount: z.string().regex(/^\d+(\.\d+)?$/),

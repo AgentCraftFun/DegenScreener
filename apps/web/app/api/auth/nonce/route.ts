@@ -3,6 +3,7 @@ import { getRedis } from "../../../../lib/redis";
 import { checkRateLimit } from "../../../../lib/api";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   const rl = await checkRateLimit(req, "auth");

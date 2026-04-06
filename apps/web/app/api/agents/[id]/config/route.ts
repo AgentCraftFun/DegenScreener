@@ -6,6 +6,7 @@ import { Personality } from "@degenscreener/shared";
 import { requireAuth, parseBody } from "../../../../../lib/api";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const PatchSchema = z.object({
   name: z.string().min(1).max(64).optional(),

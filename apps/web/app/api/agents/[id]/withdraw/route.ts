@@ -7,6 +7,7 @@ import { MIN_WITHDRAWAL } from "@degenscreener/shared";
 import { requireAuth, parseBody } from "../../../../../lib/api";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const BodySchema = z.object({ amount: z.string().regex(/^\d+(\.\d+)?$/) });
 

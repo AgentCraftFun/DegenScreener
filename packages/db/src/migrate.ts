@@ -9,6 +9,10 @@ const DATABASE_URL =
   process.env.DATABASE_URL ??
   "postgresql://postgres:postgres@localhost:5432/degenscreener";
 
+export async function runMigrations() {
+  return main();
+}
+
 async function main() {
   const client = new pg.Client({ connectionString: DATABASE_URL });
   await client.connect();
@@ -47,12 +51,16 @@ async function main() {
     await client.query("INSERT INTO __migrations (name) VALUES ($1)", [file]);
   }
 
-  // TimescaleDB setup
-  console.log("timescaledb: ensuring extension and hypertable");
-  await client.query("CREATE EXTENSION IF NOT EXISTS timescaledb;");
-  await client.query(
-    "SELECT create_hypertable('candles', 'timestamp', if_not_exists => TRUE);",
-  );
+  // TimescaleDB setup (optional — Railway Postgres may not have it)
+  try {
+    await client.query("CREATE EXTENSION IF NOT EXISTS timescaledb;");
+    await client.query(
+      "SELECT create_hypertable('candles', 'timestamp', if_not_exists => TRUE);",
+    );
+    console.log("timescaledb: hypertable created");
+  } catch (e) {
+    console.warn("timescaledb: not available, skipping hypertable setup (candles will still work as a regular table)");
+  }
 
   await client.end();
   console.log("migrations complete");

@@ -1,5 +1,11 @@
 import { Redis } from "ioredis";
 import { pool as dbPool, simulationQueries } from "@degenscreener/db";
+// Dynamic import to avoid bundling migrate.ts into web app
+async function runMigrations() {
+  // @ts-expect-error dynamic path import
+  const mod = await import("../../packages/db/dist/migrate.js");
+  return mod.runMigrations();
+}
 import { runLoop } from "./loop.js";
 import { seedRng } from "./util/rng.js";
 import { circuitBreaker } from "./agents/scheduler.js";
@@ -43,6 +49,16 @@ async function main() {
     initEventPublisher(redis);
   } catch (e) {
     console.warn("[worker] redis connect failed, continuing without pubsub:", e);
+  }
+
+  // Auto-run migrations on startup
+  console.log("[worker] running database migrations...");
+  try {
+    await runMigrations();
+    console.log("[worker] migrations complete");
+  } catch (e) {
+    console.error("[worker] migration error:", e);
+    // Continue anyway — tables may already exist
   }
 
   console.log(

@@ -4,6 +4,7 @@ import { db, schema } from "@degenscreener/db";
 import { requireAuth } from "../../../../../lib/api";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const auth = await requireAuth(req);

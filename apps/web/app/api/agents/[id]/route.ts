@@ -4,6 +4,7 @@ import { db, schema } from "@degenscreener/db";
 import { getAuthFromRequest } from "../../../../lib/auth";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   const auth = await getAuthFromRequest(req);

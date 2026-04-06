@@ -20,6 +20,7 @@ import {
 import { randInt } from "../../../lib/util";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const CreateSchema = z.object({
   name: z.string().min(1).max(64),

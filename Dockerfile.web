@@ -2,7 +2,6 @@ FROM node:22-slim AS base
 RUN npm i -g corepack@latest && corepack enable && corepack prepare pnpm@10.33.0 --activate
 WORKDIR /app
 
-# Copy workspace config and lockfile first (cache layer)
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json tsconfig.base.json ./
 COPY packages/shared/package.json packages/shared/
 COPY packages/db/package.json packages/db/
@@ -14,11 +13,18 @@ COPY apps/ws-server/package.json apps/ws-server/
 
 RUN pnpm install --frozen-lockfile
 
-# Copy all source
 COPY . .
 
-# Build everything (turbo handles dependency order)
-RUN pnpm build
+# Build shared packages, then web with DB stubbed out
+ENV SKIP_DB=1
+RUN pnpm --filter @degenscreener/shared build && \
+    pnpm --filter @degenscreener/pool-engine build && \
+    pnpm --filter @degenscreener/blockchain build && \
+    pnpm --filter @degenscreener/db build && \
+    pnpm --filter @degenscreener/web build
+
+# At runtime, SKIP_DB must NOT be set
+ENV SKIP_DB=
 
 EXPOSE 3000
 CMD ["sh", "-c", "cd apps/web && node_modules/.bin/next start -H 0.0.0.0 -p ${PORT:-3000}"]

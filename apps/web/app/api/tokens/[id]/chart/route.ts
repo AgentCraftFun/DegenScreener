@@ -3,6 +3,7 @@ import { and, eq, gte, lte, asc, sql } from "drizzle-orm";
 import { db, schema } from "@degenscreener/db";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const TF_MINUTES: Record<string, number> = {
   "1m": 1,

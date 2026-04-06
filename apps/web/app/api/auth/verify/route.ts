@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import { checkRateLimit } from "../../../../lib/api";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const BodySchema = z.object({
   message: z.string(),

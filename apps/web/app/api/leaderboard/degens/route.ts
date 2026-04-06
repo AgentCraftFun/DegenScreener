@@ -4,6 +4,7 @@ import { eq, desc, gte, and, sql } from "drizzle-orm";
 import { db, schema } from "@degenscreener/db";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function timeframeToMs(tf: string): number | null {
   switch (tf) {
