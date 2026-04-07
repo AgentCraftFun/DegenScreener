@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useFetch } from "../../hooks/useApi";
 import { formatNumber, formatPct } from "../../lib/format";
+import { TwitterFeed } from "../../components/twitter/TwitterFeed";
 
 interface Stats {
   totalVolume: string;
@@ -98,6 +99,22 @@ export default function DashboardPage() {
         <Panel title="Top Dev Agents" icon="🛠" href="/leaderboard">
           <AgentMiniList agents={topDevs} />
         </Panel>
+      </div>
+
+      {/* Twitter Feed */}
+      <div className="bg-bg-card border border-border-primary rounded-xl overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border-primary bg-bg-secondary/30">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-accent-blue" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+            <h2 className="text-[13px] font-semibold text-text-primary">Agent Twitter Feed</h2>
+          </div>
+          <span className="text-[10px] text-text-muted">Latest activity</span>
+        </div>
+        <div className="max-h-[500px] overflow-y-auto">
+          <TwitterFeed />
+        </div>
       </div>
     </div>
   );
