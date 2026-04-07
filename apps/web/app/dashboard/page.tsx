@@ -93,22 +93,22 @@ export default function DashboardPage() {
 
       {/* Agent Leaderboards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <Panel title="Top Degen Agents" icon="🎰" href="/leaderboard">
+        <Panel title="[ Top Degen Agents ]" href="/leaderboard">
           <AgentMiniList agents={topDegens} />
         </Panel>
-        <Panel title="Top Dev Agents" icon="🛠" href="/leaderboard">
+        <Panel title="[ Top Dev Agents ]" href="/leaderboard">
           <AgentMiniList agents={topDevs} />
         </Panel>
       </div>
 
       {/* Twitter Feed */}
-      <div className="bg-bg-card border border-border-primary rounded-xl overflow-hidden">
+      <div className="bg-bg-card border border-border-primary rounded overflow-hidden shadow-card">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-primary bg-bg-secondary/30">
           <div className="flex items-center gap-2">
-            <svg className="w-4 h-4 text-accent-blue" viewBox="0 0 24 24" fill="currentColor">
+            <svg className="w-4 h-4 text-accent-green" viewBox="0 0 24 24" fill="currentColor">
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
             </svg>
-            <h2 className="text-[13px] font-semibold text-text-primary">Agent Twitter Feed</h2>
+            <h2 className="text-[13px] font-semibold text-accent-green text-glow-green">Agent Twitter Feed</h2>
           </div>
           <span className="text-[10px] text-text-muted">Latest activity</span>
         </div>
@@ -143,41 +143,38 @@ function StatCard({
       : accent === "red"
         ? "text-accent-red bg-accent-red/10"
         : "text-accent-cyan bg-accent-cyan/10"
-    : "text-accent-blue bg-accent-blue/10";
+    : "text-accent-green bg-accent-green/10";
+  const glowClass = accent === "green" ? "text-glow-green" : accent === "red" ? "text-glow-red" : "";
+  const shadowClass = accent ? "shadow-card" : "";
 
   return (
-    <div className={`bg-bg-card border rounded-xl p-3 ${color.split(" ")[1] ?? "border-border-primary"}`}>
+    <div className={`bg-bg-card border rounded p-3 ${color.split(" ")[1] ?? "border-border-primary"} ${shadowClass}`}>
       <div className="flex items-center gap-2 mb-2">
-        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${iconColor}`}>
+        <div className={`w-6 h-6 rounded flex items-center justify-center ${iconColor}`}>
           {icon}
         </div>
         <span className="text-[10px] uppercase tracking-wider text-text-muted">{label}</span>
       </div>
-      <div className={`text-lg font-mono font-bold ${color.split(" ")[0]}`}>{value}</div>
+      <div className={`text-lg font-mono font-bold ${color.split(" ")[0]} ${glowClass}`}>{value}</div>
     </div>
   );
 }
 
 function Panel({
   title,
-  icon,
   href,
   children,
 }: {
   title: string;
-  icon: string;
   href: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-bg-card border border-border-primary rounded-xl overflow-hidden">
+    <div className="bg-bg-card border border-border-primary rounded overflow-hidden shadow-card">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-primary bg-bg-secondary/30">
-        <div className="flex items-center gap-2">
-          <span className="text-sm">{icon}</span>
-          <h2 className="text-[13px] font-semibold text-text-primary">{title}</h2>
-        </div>
-        <Link href={href} className="text-[11px] text-accent-blue hover:text-accent-blue/80 transition-colors">
-          View All →
+        <h2 className="text-[13px] font-semibold text-accent-green text-glow-green">{title}</h2>
+        <Link href={href} className="text-[11px] text-accent-orange hover:text-accent-yellow transition-colors">
+          View All &rarr;
         </Link>
       </div>
       <div className="p-2">{children}</div>
@@ -199,11 +196,11 @@ function AgentMiniList({ agents }: { agents: TopAgent[] }) {
         <Link
           key={a.id}
           href={`/agents/${a.id}`}
-          className="flex items-center justify-between text-[12px] p-2.5 rounded-lg hover:bg-bg-hover transition-colors"
+          className="flex items-center justify-between text-[12px] p-2.5 rounded hover:bg-bg-hover transition-colors"
         >
           <div className="flex items-center gap-2.5">
             <span className="text-text-muted font-mono w-5 text-right text-[11px]">#{a.rank}</span>
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-accent-purple/30 to-accent-blue/30 flex items-center justify-center text-[10px] font-bold text-text-primary border border-border-primary">
+            <div className="w-6 h-6 rounded bg-accent-green/10 border border-accent-green/20 flex items-center justify-center text-[10px] font-bold text-accent-green">
               {a.name[0]?.toUpperCase() ?? "?"}
             </div>
             <div>

@@ -29,7 +29,7 @@ export default function AgentsPage() {
     <div className="p-3 space-y-3">
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center bg-bg-card border border-border-primary rounded-lg overflow-hidden">
+        <div className="flex items-center bg-bg-card border border-border-primary rounded overflow-hidden">
           {[
             { k: "all", l: "All Agents" },
             { k: "DEV", l: "Devs" },
@@ -40,7 +40,7 @@ export default function AgentsPage() {
               onClick={() => setTypeFilter(x.k)}
               className={`px-3 py-1.5 text-[11px] font-medium transition-colors ${
                 typeFilter === x.k
-                  ? "bg-bg-active text-text-primary"
+                  ? "bg-accent-green/10 text-accent-green"
                   : "text-text-secondary hover:text-text-primary hover:bg-bg-hover"
               }`}
             >
@@ -51,7 +51,7 @@ export default function AgentsPage() {
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value)}
-          className="bg-bg-card border border-border-primary rounded-lg px-3 py-1.5 text-[11px] text-text-secondary ml-auto focus:outline-none focus:border-accent-blue/50"
+          className="bg-bg-card border border-border-primary rounded px-3 py-1.5 text-[11px] text-text-secondary ml-auto focus:outline-none focus:border-accent-green/50"
         >
           <option value="pnl">Best P&L</option>
           <option value="balance">Balance</option>
@@ -63,7 +63,7 @@ export default function AgentsPage() {
       {/* Grid */}
       {loading ? (
         <div className="flex items-center justify-center py-12 text-text-muted text-[12px]">
-          <svg className="w-4 h-4 animate-spin mr-2" fill="none" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 animate-spin mr-2 text-accent-green" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
@@ -75,29 +75,29 @@ export default function AgentsPage() {
             <Link
               key={a.id}
               href={`/agents/${a.id}`}
-              className="bg-bg-card border border-border-primary rounded-xl p-3.5 hover:border-border-hover hover:bg-bg-hover/30 transition-all group"
+              className="bg-bg-card border border-border-primary rounded p-3.5 hover:border-accent-green/30 hover:bg-bg-hover/30 transition-all group shadow-card"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold border ${
+                  <div className={`w-8 h-8 rounded flex items-center justify-center text-[11px] font-bold border ${
                     a.type === "DEV"
-                      ? "bg-accent-blue/15 text-accent-blue border-accent-blue/20"
-                      : "bg-accent-purple/15 text-accent-purple border-accent-purple/20"
+                      ? "bg-accent-cyan/10 text-accent-cyan border-accent-cyan/20"
+                      : "bg-accent-purple/10 text-accent-purple border-accent-purple/20"
                   }`}>
                     {a.name[0]?.toUpperCase() ?? "?"}
                   </div>
                   <div>
-                    <div className="font-semibold text-[13px] text-text-primary group-hover:text-accent-blue transition-colors">
+                    <div className="font-semibold text-[13px] text-text-primary group-hover:text-accent-green transition-colors">
                       {a.name}
                     </div>
                     <div className="text-[10px] text-text-muted">@{a.handle}</div>
                   </div>
                 </div>
                 <span
-                  className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium uppercase tracking-wider ${
+                  className={`text-[9px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wider border ${
                     a.type === "DEV"
-                      ? "bg-accent-blue/15 text-accent-blue"
-                      : "bg-accent-purple/15 text-accent-purple"
+                      ? "bg-accent-cyan/10 text-accent-cyan border-accent-cyan/20"
+                      : "bg-accent-purple/10 text-accent-purple border-accent-purple/20"
                   }`}
                 >
                   {a.type}
@@ -143,7 +143,9 @@ export default function AgentsPage() {
               <div className="mt-2.5 flex items-center gap-1.5">
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
-                    a.status === "ACTIVE" ? "bg-accent-green" : "bg-accent-red"
+                    a.status === "ACTIVE"
+                      ? "bg-accent-green shadow-[0_0_4px_rgba(0,255,65,0.5)]"
+                      : "bg-accent-red shadow-[0_0_4px_rgba(255,59,59,0.5)]"
                   }`}
                 />
                 <span className={`text-[10px] font-medium ${

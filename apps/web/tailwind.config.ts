@@ -10,33 +10,46 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        "bg-primary": "#0b0e11",
-        "bg-secondary": "#0f1318",
-        "bg-card": "#141a22",
-        "bg-hover": "#1a2130",
-        "bg-active": "#1e2a3a",
-        "border-primary": "#1b2332",
-        "border-hover": "#2a3a50",
-        "text-primary": "#e1e8ef",
-        "text-secondary": "#6b7a8d",
-        "text-muted": "#4a5568",
-        "accent-green": "#00c278",
-        "accent-red": "#f6465d",
-        "accent-blue": "#3b82f6",
-        "accent-purple": "#a855f7",
-        "accent-yellow": "#f0b90b",
-        "accent-cyan": "#00d4aa",
-        "accent-orange": "#f97316",
+        // Backgrounds — near-black with subtle green tint
+        "bg-primary": "#050505",
+        "bg-secondary": "#0a0f0a",
+        "bg-card": "#0b1a0b",
+        "bg-hover": "#122212",
+        "bg-active": "#0a2a0a",
+
+        // Borders — dark green
+        "border-primary": "#1a3a1a",
+        "border-hover": "#2a5a2a",
+
+        // Text — green-tinted
+        "text-primary": "#d0f0d0",
+        "text-secondary": "#5a8a5a",
+        "text-muted": "#2a4a2a",
+
+        // Accents
+        "accent-green": "#00FF41",   // Terminal green — THE primary color
+        "accent-red": "#ff3b3b",     // Bright red for bearish/danger
+        "accent-blue": "#00FF41",    // Mapped to green (primary interactive)
+        "accent-purple": "#b44aff",  // Agent type accent
+        "accent-yellow": "#f5a623",  // Amber/orange warning
+        "accent-cyan": "#00ffaa",    // Bright cyan-green
+        "accent-orange": "#ff8c00",  // Orange accent
       },
       fontFamily: {
-        mono: ["ui-monospace", "SF Mono", "Monaco", "Consolas", "monospace"],
+        mono: [
+          "'Share Tech Mono'",
+          "ui-monospace",
+          "SF Mono",
+          "Monaco",
+          "Consolas",
+          "monospace",
+        ],
         sans: [
-          "Inter",
-          "-apple-system",
-          "BlinkMacSystemFont",
-          "Segoe UI",
-          "Roboto",
-          "sans-serif",
+          "'Share Tech Mono'",
+          "ui-monospace",
+          "SF Mono",
+          "Consolas",
+          "monospace",
         ],
       },
       animation: {
@@ -44,6 +57,9 @@ const config: Config = {
         "fade-in": "fadeIn 0.2s ease-out",
         "slide-up": "slideUp 0.2s ease-out",
         pulse: "pulse 2s infinite",
+        scanline: "scanline 8s linear infinite",
+        flicker: "flicker 0.15s infinite",
+        "glow-pulse": "glowPulse 2s ease-in-out infinite",
       },
       keyframes: {
         marquee: {
@@ -58,12 +74,28 @@ const config: Config = {
           "0%": { opacity: "0", transform: "translateY(4px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        scanline: {
+          "0%": { transform: "translateY(-100%)" },
+          "100%": { transform: "translateY(100%)" },
+        },
+        flicker: {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.97" },
+        },
+        glowPulse: {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.7" },
+        },
       },
       boxShadow: {
-        glow: "0 0 20px rgba(59, 130, 246, 0.15)",
-        "glow-green": "0 0 20px rgba(0, 194, 120, 0.15)",
-        card: "0 2px 8px rgba(0, 0, 0, 0.3)",
-        dropdown: "0 8px 24px rgba(0, 0, 0, 0.5)",
+        glow: "0 0 20px rgba(0, 255, 65, 0.15)",
+        "glow-green": "0 0 20px rgba(0, 255, 65, 0.25)",
+        "glow-green-strong": "0 0 30px rgba(0, 255, 65, 0.4), 0 0 60px rgba(0, 255, 65, 0.1)",
+        "glow-orange": "0 0 20px rgba(255, 140, 0, 0.2)",
+        "glow-red": "0 0 20px rgba(255, 59, 59, 0.2)",
+        card: "0 0 15px rgba(0, 255, 65, 0.05), inset 0 1px 0 rgba(0, 255, 65, 0.05)",
+        dropdown: "0 8px 32px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 255, 65, 0.1)",
+        "inner-glow": "inset 0 0 20px rgba(0, 255, 65, 0.03)",
       },
     },
   },

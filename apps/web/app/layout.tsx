@@ -18,6 +18,7 @@ export default function RootLayout({
       <body>
         <Providers>
           <AppShell>{children}</AppShell>
+          <div className="crt-overlay" />
         </Providers>
       </body>
     </html>

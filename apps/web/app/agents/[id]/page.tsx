@@ -68,29 +68,29 @@ export default function AgentDetailPage({ params }: { params: Promise<{ id: stri
     <div className="p-4 space-y-4">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold">{a.name}</h1>
+          <h1 className="text-2xl font-bold text-accent-green text-glow-green">{a.name}</h1>
           <div className="text-sm text-text-secondary">
             @{a.handle} · {a.personality}
           </div>
-          <div className="text-xs text-text-secondary mt-1">
+          <div className="text-xs text-text-muted mt-1">
             Active since {formatRelative(a.createdAt)}
           </div>
         </div>
         <div className="flex flex-col gap-1 items-end">
           <span
-            className={`text-xs px-2 py-0.5 rounded ${
+            className={`text-xs px-2 py-0.5 rounded border ${
               a.type === "DEV"
-                ? "bg-accent-blue/20 text-accent-blue"
-                : "bg-accent-purple/20 text-accent-purple"
+                ? "bg-accent-cyan/10 text-accent-cyan border-accent-cyan/20"
+                : "bg-accent-purple/10 text-accent-purple border-accent-purple/20"
             }`}
           >
             {a.type}
           </span>
           <span
-            className={`text-xs px-2 py-0.5 rounded ${
+            className={`text-xs px-2 py-0.5 rounded border ${
               a.status === "ACTIVE"
-                ? "bg-accent-green/20 text-accent-green"
-                : "bg-accent-red/20 text-accent-red"
+                ? "bg-accent-green/10 text-accent-green border-accent-green/20"
+                : "bg-accent-red/10 text-accent-red border-accent-red/20"
             }`}
           >
             {a.status}
@@ -131,8 +131,8 @@ export default function AgentDetailPage({ params }: { params: Promise<{ id: stri
             onClick={() => setTab(x.k as typeof tab)}
             className={`px-4 py-2 text-sm ${
               tab === x.k
-                ? "text-text-primary border-b-2 border-accent-blue -mb-px"
-                : "text-text-secondary"
+                ? "text-accent-green border-b-2 border-accent-green -mb-px"
+                : "text-text-secondary hover:text-text-primary"
             }`}
           >
             {x.l}
@@ -162,10 +162,11 @@ function Stat({
       : color === "red"
         ? "text-accent-red"
         : "text-text-primary";
+  const glow = color === "green" ? "text-glow-green" : color === "red" ? "text-glow-red" : "";
   return (
-    <div className="bg-bg-card border border-border-primary rounded p-3">
+    <div className="bg-bg-card border border-border-primary rounded p-3 shadow-card">
       <div className="text-xs text-text-secondary">{label}</div>
-      <div className={`text-lg font-mono mt-1 ${c}`}>{value}</div>
+      <div className={`text-lg font-mono mt-1 ${c} ${glow}`}>{value}</div>
     </div>
   );
 }
@@ -176,7 +177,7 @@ function TradesList({ trades }: { trades: Trade[] }) {
   return (
     <div className="bg-bg-card border border-border-primary rounded divide-y divide-border-primary">
       {trades.map((t) => (
-        <div key={t.id} className="p-3 text-xs flex items-center justify-between">
+        <div key={t.id} className="p-3 text-xs flex items-center justify-between hover:bg-bg-hover/30 transition-colors">
           <div>
             <span
               className={`font-semibold ${
@@ -204,8 +205,8 @@ function TweetsList({ tweets }: { tweets: Tweet[] }) {
   return (
     <div className="bg-bg-card border border-border-primary rounded divide-y divide-border-primary">
       {tweets.map((t) => (
-        <div key={t.id} className="p-3">
-          <div className="text-sm">{t.content}</div>
+        <div key={t.id} className="p-3 hover:bg-bg-hover/30 transition-colors">
+          <div className="text-sm text-text-primary">{t.content}</div>
           <div className="text-xs text-text-secondary mt-1">
             {formatRelative(t.createdAt)} · sentiment {t.sentimentScore}
           </div>
@@ -224,12 +225,12 @@ function HoldingsList({ holdings }: { holdings: Holding[] }) {
         <Link
           key={h.id}
           href={`/tokens/${h.tokenId}`}
-          className="p-3 flex items-center justify-between text-sm hover:bg-bg-secondary"
+          className="p-3 flex items-center justify-between text-sm hover:bg-bg-hover/30 transition-colors"
         >
           <div className="font-mono text-xs text-text-secondary">
             {h.tokenId.slice(0, 8)}...
           </div>
-          <div className="font-mono text-xs">
+          <div className="font-mono text-xs text-text-primary">
             qty={formatNumber(h.quantity)} · entry={h.avgEntryPrice}
           </div>
         </Link>
@@ -258,15 +259,15 @@ function OwnerControls({ agent }: { agent: AgentDetail["agent"] }) {
   };
 
   return (
-    <div className="bg-bg-card border border-accent-blue/30 rounded p-4 space-y-3">
-      <h3 className="text-sm font-semibold">Owner Controls</h3>
+    <div className="bg-bg-card border border-accent-green/20 rounded p-4 space-y-3 shadow-glow">
+      <h3 className="text-sm font-semibold text-accent-green text-glow-green">Owner Controls</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <label className="text-xs text-text-secondary">Name</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full bg-bg-primary border border-border-primary rounded px-3 py-1.5 text-sm mt-1"
+            className="w-full bg-bg-primary border border-border-primary rounded px-3 py-1.5 text-sm mt-1 focus:outline-none focus:border-accent-green/50 text-text-primary"
           />
         </div>
         <div>
@@ -274,7 +275,7 @@ function OwnerControls({ agent }: { agent: AgentDetail["agent"] }) {
           <select
             value={personality}
             onChange={(e) => setPersonality(e.target.value)}
-            className="w-full bg-bg-primary border border-border-primary rounded px-3 py-1.5 text-sm mt-1"
+            className="w-full bg-bg-primary border border-border-primary rounded px-3 py-1.5 text-sm mt-1 focus:outline-none focus:border-accent-green/50 text-text-primary"
           >
             <option value="ANALYTICAL">Analytical</option>
             <option value="HYPE_BEAST">Hype Beast</option>
@@ -286,7 +287,7 @@ function OwnerControls({ agent }: { agent: AgentDetail["agent"] }) {
       <button
         onClick={save}
         disabled={saving}
-        className="px-4 py-1.5 bg-accent-blue text-white rounded text-sm disabled:opacity-50"
+        className="px-4 py-1.5 bg-accent-green/15 border border-accent-green/30 text-accent-green rounded text-sm disabled:opacity-50 hover:bg-accent-green/25 transition-colors"
       >
         {saving ? "Saving..." : "Save"}
       </button>

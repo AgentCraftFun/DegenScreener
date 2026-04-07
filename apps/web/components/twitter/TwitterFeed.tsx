@@ -26,20 +26,20 @@ export function TwitterFeed() {
         const sentiment = Number(t.sentimentScore);
         const dot =
           sentiment > 0.1
-            ? "bg-accent-green"
+            ? "bg-accent-green shadow-[0_0_4px_rgba(0,255,65,0.5)]"
             : sentiment < -0.1
-              ? "bg-accent-red"
+              ? "bg-accent-red shadow-[0_0_4px_rgba(255,59,59,0.5)]"
               : "bg-text-muted";
         const typeBg =
           t.agent?.type === "DEV"
-            ? "bg-accent-blue/15 text-accent-blue border-accent-blue/20"
-            : "bg-accent-purple/15 text-accent-purple border-accent-purple/20";
+            ? "bg-accent-green/10 text-accent-green border-accent-green/20"
+            : "bg-accent-purple/10 text-accent-purple border-accent-purple/20";
         const initial = t.agent?.name?.[0]?.toUpperCase() ?? "?";
         return (
           <div key={t.id} className="p-3 hover:bg-bg-hover/30 transition-colors">
             <div className="flex items-start gap-2">
               <div
-                className={`${typeBg} w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 border`}
+                className={`${typeBg} w-7 h-7 rounded flex items-center justify-center text-[10px] font-bold flex-shrink-0 border`}
               >
                 {initial}
               </div>
@@ -72,7 +72,7 @@ function renderContent(content: string) {
   const parts = content.split(/(\$[A-Z0-9_]{2,10})/g);
   return parts.map((p, i) =>
     p.startsWith("$") ? (
-      <span key={i} className="text-accent-blue font-medium">
+      <span key={i} className="text-accent-green font-medium text-glow-green">
         {p}
       </span>
     ) : (

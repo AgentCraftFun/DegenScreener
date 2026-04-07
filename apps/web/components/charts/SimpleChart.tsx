@@ -25,9 +25,26 @@ export function SimpleChart({ candles }: { candles: Candle[] }) {
     if (!ctx) return;
     ctx.clearRect(0, 0, w, h);
 
-    // Background
-    ctx.fillStyle = "#0b0e11";
+    // Background — near black
+    ctx.fillStyle = "#050505";
     ctx.fillRect(0, 0, w, h);
+
+    // Grid pattern
+    ctx.strokeStyle = "rgba(0, 255, 65, 0.04)";
+    ctx.lineWidth = 0.5 * dpr;
+    const gridSize = 40 * dpr;
+    for (let x = 0; x < w; x += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+    for (let y = 0; y < h; y += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
 
     const padding = 50 * dpr;
     const rightPad = 70 * dpr;
@@ -45,8 +62,8 @@ export function SimpleChart({ candles }: { candles: Candle[] }) {
     const cw = (w - padding - rightPad) / candles.length;
     const bw = Math.max(cw * 0.65, 2 * dpr);
 
-    // Grid lines
-    ctx.strokeStyle = "#1b2332";
+    // Grid lines — horizontal
+    ctx.strokeStyle = "rgba(0, 255, 65, 0.06)";
     ctx.lineWidth = 0.5 * dpr;
     for (let i = 0; i <= 5; i++) {
       const y = padding + (chartH / 5) * i;
@@ -59,8 +76,8 @@ export function SimpleChart({ candles }: { candles: Candle[] }) {
     ctx.setLineDash([]);
 
     // Price axis labels
-    ctx.fillStyle = "#6b7a8d";
-    ctx.font = `${10 * dpr}px monospace`;
+    ctx.fillStyle = "#5a8a5a";
+    ctx.font = `${10 * dpr}px 'Share Tech Mono', monospace`;
     ctx.textAlign = "right";
     for (let i = 0; i <= 5; i++) {
       const price = max - (range / 5) * i;
@@ -76,7 +93,7 @@ export function SimpleChart({ candles }: { candles: Candle[] }) {
     const isLastUp = lastClose >= lastOpen;
     const priceLineY = padding + ((max - lastClose) / range) * chartH;
 
-    ctx.strokeStyle = isLastUp ? "rgba(0, 194, 120, 0.4)" : "rgba(246, 70, 93, 0.4)";
+    ctx.strokeStyle = isLastUp ? "rgba(0, 255, 65, 0.4)" : "rgba(255, 59, 59, 0.4)";
     ctx.lineWidth = 1 * dpr;
     ctx.setLineDash([3 * dpr, 3 * dpr]);
     ctx.beginPath();
@@ -87,14 +104,14 @@ export function SimpleChart({ candles }: { candles: Candle[] }) {
 
     // Price label box
     const priceLabel = lastClose < 0.01 ? lastClose.toExponential(2) : lastClose.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 });
-    const labelColor = isLastUp ? "#00c278" : "#f6465d";
-    const labelBg = isLastUp ? "rgba(0, 194, 120, 0.2)" : "rgba(246, 70, 93, 0.2)";
+    const labelColor = isLastUp ? "#00FF41" : "#ff3b3b";
+    const labelBg = isLastUp ? "rgba(0, 255, 65, 0.15)" : "rgba(255, 59, 59, 0.15)";
     ctx.fillStyle = labelBg;
     const labelW = ctx.measureText(priceLabel).width + 12 * dpr;
     ctx.fillRect(w - rightPad + 2 * dpr, priceLineY - 8 * dpr, labelW, 16 * dpr);
     ctx.fillStyle = labelColor;
     ctx.textAlign = "left";
-    ctx.font = `bold ${10 * dpr}px monospace`;
+    ctx.font = `bold ${10 * dpr}px 'Share Tech Mono', monospace`;
     ctx.fillText(priceLabel, w - rightPad + 8 * dpr, priceLineY + 4 * dpr);
 
     // Candles
@@ -105,7 +122,7 @@ export function SimpleChart({ candles }: { candles: Candle[] }) {
       const low = Number(c.low);
       const x = padding + i * cw + cw / 2;
       const up = close >= open;
-      const color = up ? "#00c278" : "#f6465d";
+      const color = up ? "#00FF41" : "#ff3b3b";
 
       const yHigh = padding + ((max - high) / range) * chartH;
       const yLow = padding + ((max - low) / range) * chartH;
@@ -126,16 +143,25 @@ export function SimpleChart({ candles }: { candles: Candle[] }) {
       const bodyH = Math.max(1 * dpr, Math.abs(yClose - yOpen));
       ctx.fillRect(x - bw / 2, bodyY, bw, bodyH);
 
+      // Candle glow for recent candles (last 5)
+      if (i >= candles.length - 5 && up) {
+        ctx.shadowColor = "rgba(0, 255, 65, 0.3)";
+        ctx.shadowBlur = 6 * dpr;
+        ctx.fillRect(x - bw / 2, bodyY, bw, bodyH);
+        ctx.shadowColor = "transparent";
+        ctx.shadowBlur = 0;
+      }
+
       // Volume bar
       const vol = Number(c.volume);
       const volBarH = (vol / maxVol) * volH;
-      ctx.fillStyle = up ? "rgba(0, 194, 120, 0.15)" : "rgba(246, 70, 93, 0.15)";
+      ctx.fillStyle = up ? "rgba(0, 255, 65, 0.12)" : "rgba(255, 59, 59, 0.12)";
       ctx.fillRect(x - bw / 2, volTop + volH - volBarH, bw, volBarH);
     });
 
     // Volume label
-    ctx.fillStyle = "#4a5568";
-    ctx.font = `${9 * dpr}px monospace`;
+    ctx.fillStyle = "#2a4a2a";
+    ctx.font = `${9 * dpr}px 'Share Tech Mono', monospace`;
     ctx.textAlign = "left";
     ctx.fillText("Volume", padding + 4 * dpr, volTop + 12 * dpr);
 

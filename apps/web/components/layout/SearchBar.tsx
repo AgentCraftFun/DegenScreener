@@ -77,20 +77,22 @@ export function SearchBar() {
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 200)}
           placeholder="Search tokens, agents..."
-          className="w-full bg-bg-primary border border-border-primary rounded-lg pl-8 pr-3 py-1.5 text-[12px] text-text-primary placeholder-text-muted focus:outline-none focus:border-accent-blue/50 focus:bg-bg-card transition-colors"
+          className="w-full bg-bg-primary border border-border-primary rounded pl-8 pr-3 py-1.5 text-[12px] text-text-primary placeholder-text-muted focus:outline-none focus:border-accent-green/50 focus:bg-bg-card focus:shadow-glow transition-all"
         />
       </div>
       {open && results.length > 0 && (
-        <div className="absolute top-full mt-1 left-0 right-0 bg-bg-card border border-border-primary rounded-lg shadow-dropdown z-50 max-h-80 overflow-y-auto animate-fade-in">
+        <div className="absolute top-full mt-1 left-0 right-0 bg-bg-card border border-accent-green/20 rounded shadow-dropdown z-50 max-h-80 overflow-y-auto animate-fade-in">
           {results.map((r) => (
             <Link
               key={r.id}
               href={r.href}
-              className="flex items-center gap-2.5 px-3 py-2 hover:bg-bg-hover text-[12px] transition-colors first:rounded-t-lg last:rounded-b-lg"
+              className="flex items-center gap-2.5 px-3 py-2 hover:bg-bg-hover text-[12px] transition-colors first:rounded-t last:rounded-b"
               onClick={() => setOpen(false)}
             >
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                r.type === "token" ? "bg-accent-green/20 text-accent-green" : "bg-accent-purple/20 text-accent-purple"
+              <div className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold border ${
+                r.type === "token"
+                  ? "bg-accent-green/10 text-accent-green border-accent-green/20"
+                  : "bg-accent-purple/10 text-accent-purple border-accent-purple/20"
               }`}>
                 {r.type === "token" ? "$" : "@"}
               </div>
@@ -98,7 +100,7 @@ export function SearchBar() {
                 <div className="text-text-primary font-medium truncate">{r.label}</div>
                 <div className="text-[10px] text-text-muted truncate">{r.sub}</div>
               </div>
-              <span className="text-[9px] uppercase tracking-wider text-text-muted bg-bg-primary px-1.5 py-0.5 rounded">
+              <span className="text-[9px] uppercase tracking-wider text-text-muted bg-bg-primary border border-border-primary px-1.5 py-0.5 rounded">
                 {r.type}
               </span>
             </Link>

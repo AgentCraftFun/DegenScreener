@@ -61,7 +61,7 @@ export default function TokenPage({ params }: { params: { id: string } }) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="flex items-center gap-2 text-text-muted text-sm">
-          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 animate-spin text-accent-green" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
@@ -80,18 +80,18 @@ export default function TokenPage({ params }: { params: { id: string } }) {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Token Header */}
         <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border-primary bg-bg-secondary/30">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-blue/30 to-accent-purple/30 flex items-center justify-center text-sm font-bold text-text-primary border border-border-primary">
+          <div className="w-8 h-8 rounded bg-accent-green/10 border border-accent-green/20 flex items-center justify-center text-sm font-bold text-accent-green">
             {token.ticker[0]}
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-text-primary">{token.ticker}</span>
+              <span className="font-bold text-accent-green text-glow-green">{token.ticker}</span>
               <span className="text-text-muted text-[12px]">/ DSCREEN</span>
               <span
-                className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
                   token.status === "ACTIVE"
-                    ? "bg-accent-green/15 text-accent-green"
-                    : "bg-accent-red/15 text-accent-red"
+                    ? "bg-accent-green/15 text-accent-green border border-accent-green/20"
+                    : "bg-accent-red/15 text-accent-red border border-accent-red/20"
                 }`}
               >
                 {token.status}
@@ -115,9 +115,9 @@ export default function TokenPage({ params }: { params: { id: string } }) {
             <button
               key={t}
               onClick={() => setTf(t)}
-              className={`px-2.5 py-1 text-[11px] rounded-md font-medium transition-all ${
+              className={`px-2.5 py-1 text-[11px] rounded font-medium transition-all ${
                 tf === t
-                  ? "bg-accent-blue text-white shadow-glow"
+                  ? "bg-accent-green/15 text-accent-green border border-accent-green/30 shadow-glow"
                   : "text-text-secondary hover:text-text-primary hover:bg-bg-hover"
               }`}
             >
@@ -143,13 +143,13 @@ export default function TokenPage({ params }: { params: { id: string } }) {
                 onClick={() => setTab(x.k as typeof tab)}
                 className={`px-4 py-2 text-[12px] font-medium transition-colors relative ${
                   tab === x.k
-                    ? "text-text-primary"
+                    ? "text-accent-green"
                     : "text-text-muted hover:text-text-secondary"
                 }`}
               >
                 {x.l}
                 {tab === x.k && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-blue rounded-t" />
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-green rounded-t shadow-[0_0_6px_rgba(0,255,65,0.5)]" />
                 )}
               </button>
             ))}
@@ -198,9 +198,9 @@ export default function TokenPage({ params }: { params: { id: string } }) {
           {creator ? (
             <Link
               href={`/agents/${creator.id}`}
-              className="flex items-center gap-2 p-2 rounded-lg bg-bg-card border border-border-primary hover:border-border-hover transition-colors"
+              className="flex items-center gap-2 p-2 rounded bg-bg-card border border-border-primary hover:border-accent-green/30 transition-colors"
             >
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-accent-purple/30 to-accent-blue/30 flex items-center justify-center text-[10px] font-bold text-text-primary border border-border-primary">
+              <div className="w-7 h-7 rounded bg-accent-green/10 border border-accent-green/20 flex items-center justify-center text-[10px] font-bold text-accent-green">
                 {creator.name[0]?.toUpperCase() ?? "?"}
               </div>
               <div>
@@ -216,10 +216,10 @@ export default function TokenPage({ params }: { params: { id: string } }) {
         {/* Actions */}
         <div className="p-4">
           <div className="grid grid-cols-2 gap-2">
-            <button className="py-2 rounded-lg text-[12px] font-semibold bg-accent-green/15 text-accent-green hover:bg-accent-green/25 transition-colors border border-accent-green/20">
+            <button className="py-2 rounded text-[12px] font-semibold bg-accent-green/10 text-accent-green hover:bg-accent-green/20 transition-colors border border-accent-green/20 hover:shadow-glow-green">
               Buy
             </button>
-            <button className="py-2 rounded-lg text-[12px] font-semibold bg-accent-red/15 text-accent-red hover:bg-accent-red/25 transition-colors border border-accent-red/20">
+            <button className="py-2 rounded text-[12px] font-semibold bg-accent-red/10 text-accent-red hover:bg-accent-red/20 transition-colors border border-accent-red/20 hover:shadow-glow-red">
               Sell
             </button>
           </div>
@@ -250,7 +250,7 @@ function InfoItem({ label, value, accent }: { label: string; value: string; acce
   return (
     <div>
       <div className="text-[10px] text-text-muted uppercase tracking-wider">{label}</div>
-      <div className={`text-[13px] font-mono font-semibold mt-0.5 ${accent === "green" ? "text-accent-green" : "text-text-primary"}`}>
+      <div className={`text-[13px] font-mono font-semibold mt-0.5 ${accent === "green" ? "text-accent-green text-glow-green" : "text-text-primary"}`}>
         {value}
       </div>
     </div>
@@ -260,7 +260,7 @@ function InfoItem({ label, value, accent }: { label: string; value: string; acce
 function TradesTable({ trades }: { trades: Trade[] }) {
   return (
     <table className="w-full text-[11px]">
-      <thead className="text-[10px] uppercase tracking-wider text-text-muted bg-bg-secondary/30 sticky top-0">
+      <thead className="text-[10px] uppercase tracking-wider text-accent-green/60 bg-bg-secondary/30 sticky top-0">
         <tr>
           <th className="text-left px-3 py-2">Time</th>
           <th className="text-left px-3 py-2">Type</th>
@@ -311,7 +311,7 @@ function TradesTable({ trades }: { trades: Trade[] }) {
 function HoldersTable({ holders }: { holders: Holder[] }) {
   return (
     <table className="w-full text-[11px]">
-      <thead className="text-[10px] uppercase tracking-wider text-text-muted bg-bg-secondary/30 sticky top-0">
+      <thead className="text-[10px] uppercase tracking-wider text-accent-green/60 bg-bg-secondary/30 sticky top-0">
         <tr>
           <th className="text-left px-3 py-2">#</th>
           <th className="text-left px-3 py-2">Agent</th>
@@ -336,7 +336,7 @@ function HoldersTable({ holders }: { holders: Holder[] }) {
               <td className="px-3 py-1.5">
                 <Link
                   href={`/agents/${h.agentId}`}
-                  className="text-text-primary hover:text-accent-blue transition-colors"
+                  className="text-text-primary hover:text-accent-green transition-colors"
                 >
                   {h.agentName ?? "—"}
                 </Link>

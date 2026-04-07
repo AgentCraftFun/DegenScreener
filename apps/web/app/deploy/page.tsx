@@ -60,9 +60,9 @@ export default function DeployPage() {
   if (!isConnected) {
     return (
       <div className="flex items-center justify-center h-full p-4">
-        <div className="bg-bg-card border border-border-primary rounded-xl p-8 text-center max-w-sm">
-          <div className="w-12 h-12 rounded-full bg-accent-purple/15 flex items-center justify-center mx-auto mb-3">
-            <svg className="w-6 h-6 text-accent-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <div className="bg-bg-card border border-border-primary rounded p-8 text-center max-w-sm shadow-card">
+          <div className="w-12 h-12 rounded bg-accent-green/10 border border-accent-green/20 flex items-center justify-center mx-auto mb-3">
+            <svg className="w-6 h-6 text-accent-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
           </div>
@@ -76,7 +76,7 @@ export default function DeployPage() {
 
   return (
     <div className="p-3 max-w-2xl mx-auto space-y-3">
-      <h1 className="text-lg font-bold text-text-primary">Deploy Agent</h1>
+      <h1 className="text-lg font-bold text-accent-green text-glow-green">[ Deploy Agent ]</h1>
 
       {/* Type Selection */}
       <div className="grid grid-cols-2 gap-2">
@@ -85,32 +85,30 @@ export default function DeployPage() {
           onClick={() => setType("DEV")}
           title="Dev Agent"
           desc="Launch memecoins, earn trading fees, occasionally rug."
-          icon="🛠"
-          color="blue"
+          color="cyan"
         />
         <TypeCard
           active={type === "DEGEN"}
           onClick={() => setType("DEGEN")}
           title="Degen Agent"
           desc="Scan new pairs, trade based on sentiment & momentum."
-          icon="🎰"
           color="purple"
         />
       </div>
 
       {/* Configuration */}
-      <div className="bg-bg-card border border-border-primary rounded-xl p-4 space-y-3">
+      <div className="bg-bg-card border border-border-primary rounded p-4 space-y-3 shadow-card">
         <Field label="Name">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Agent name"
-            className="w-full bg-bg-primary border border-border-primary rounded-lg px-3 py-2 text-[13px] text-text-primary placeholder-text-muted focus:outline-none focus:border-accent-blue/50 transition-colors"
+            className="w-full bg-bg-primary border border-border-primary rounded px-3 py-2 text-[13px] text-text-primary placeholder-text-muted focus:outline-none focus:border-accent-green/50 focus:shadow-glow transition-all"
           />
         </Field>
         <Field label="Handle (unique)">
-          <div className="flex items-center bg-bg-primary border border-border-primary rounded-lg overflow-hidden focus-within:border-accent-blue/50 transition-colors">
-            <span className="text-text-muted pl-3 text-[13px]">@</span>
+          <div className="flex items-center bg-bg-primary border border-border-primary rounded overflow-hidden focus-within:border-accent-green/50 focus-within:shadow-glow transition-all">
+            <span className="text-accent-green pl-3 text-[13px]">@</span>
             <input
               value={handle}
               onChange={(e) => setHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, ""))}
@@ -124,14 +122,14 @@ export default function DeployPage() {
             type="number"
             value={funding}
             onChange={(e) => setFunding(e.target.value)}
-            className="w-full bg-bg-primary border border-border-primary rounded-lg px-3 py-2 text-[13px] text-text-primary focus:outline-none focus:border-accent-blue/50 transition-colors"
+            className="w-full bg-bg-primary border border-border-primary rounded px-3 py-2 text-[13px] text-text-primary focus:outline-none focus:border-accent-green/50 focus:shadow-glow transition-all"
           />
         </Field>
         <Field label="Personality">
           <select
             value={personality}
             onChange={(e) => setPersonality(e.target.value)}
-            className="w-full bg-bg-primary border border-border-primary rounded-lg px-3 py-2 text-[13px] text-text-primary focus:outline-none focus:border-accent-blue/50 transition-colors"
+            className="w-full bg-bg-primary border border-border-primary rounded px-3 py-2 text-[13px] text-text-primary focus:outline-none focus:border-accent-green/50"
           >
             <option value="ANALYTICAL">Analytical</option>
             <option value="HYPE_BEAST">Hype Beast</option>
@@ -145,7 +143,7 @@ export default function DeployPage() {
             <select
               value={riskProfile}
               onChange={(e) => setRiskProfile(e.target.value)}
-              className="w-full bg-bg-primary border border-border-primary rounded-lg px-3 py-2 text-[13px] text-text-primary focus:outline-none focus:border-accent-blue/50 transition-colors"
+              className="w-full bg-bg-primary border border-border-primary rounded px-3 py-2 text-[13px] text-text-primary focus:outline-none focus:border-accent-green/50"
             >
               <option value="CONSERVATIVE">Conservative (1-5% position, -30% SL)</option>
               <option value="MODERATE">Moderate (5-15% position, -50% SL)</option>
@@ -159,7 +157,7 @@ export default function DeployPage() {
               <select
                 value={launchStyle}
                 onChange={(e) => setLaunchStyle(e.target.value)}
-                className="w-full bg-bg-primary border border-border-primary rounded-lg px-3 py-2 text-[13px] text-text-primary focus:outline-none focus:border-accent-blue/50 transition-colors"
+                className="w-full bg-bg-primary border border-border-primary rounded px-3 py-2 text-[13px] text-text-primary focus:outline-none focus:border-accent-green/50"
               >
                 <option value="MILD">Mild</option>
                 <option value="SPICY">Spicy</option>
@@ -170,7 +168,7 @@ export default function DeployPage() {
               <select
                 value={launchFreq}
                 onChange={(e) => setLaunchFreq(e.target.value)}
-                className="w-full bg-bg-primary border border-border-primary rounded-lg px-3 py-2 text-[13px] text-text-primary focus:outline-none focus:border-accent-blue/50 transition-colors"
+                className="w-full bg-bg-primary border border-border-primary rounded px-3 py-2 text-[13px] text-text-primary focus:outline-none focus:border-accent-green/50"
               >
                 <option value="SLOW">Slow</option>
                 <option value="MEDIUM">Medium</option>
@@ -196,7 +194,7 @@ export default function DeployPage() {
       </div>
 
       {/* Cost Breakdown */}
-      <div className="bg-bg-card border border-border-primary rounded-xl p-4 text-[12px] space-y-1.5">
+      <div className="bg-bg-card border border-border-primary rounded p-4 text-[12px] space-y-1.5 shadow-card">
         <div className="flex justify-between">
           <span className="text-text-muted">Funding</span>
           <span className="font-mono text-text-primary">{Number(funding).toFixed(2)} DSCREEN</span>
@@ -207,12 +205,12 @@ export default function DeployPage() {
         </div>
         <div className="flex justify-between font-semibold border-t border-border-primary pt-1.5 mt-1.5">
           <span className="text-text-primary">Agent starts with</span>
-          <span className="font-mono text-accent-green">{net.toFixed(2)} DSCREEN</span>
+          <span className="font-mono text-accent-green text-glow-green">{net.toFixed(2)} DSCREEN</span>
         </div>
       </div>
 
       {error && (
-        <div className="bg-accent-red/10 border border-accent-red/20 text-accent-red text-[12px] p-3 rounded-xl">
+        <div className="bg-accent-red/10 border border-accent-red/20 text-accent-red text-[12px] p-3 rounded">
           {error}
         </div>
       )}
@@ -220,7 +218,7 @@ export default function DeployPage() {
       <button
         onClick={submit}
         disabled={submitting || !name || !handle || Number(funding) <= 0}
-        className="w-full bg-gradient-to-r from-accent-blue to-accent-cyan text-white py-2.5 rounded-xl font-semibold text-[13px] hover:opacity-90 disabled:opacity-40 transition-opacity shadow-glow"
+        className="w-full bg-accent-green/15 border border-accent-green/30 text-accent-green py-2.5 rounded font-semibold text-[13px] hover:bg-accent-green/25 hover:shadow-glow-green disabled:opacity-40 transition-all text-glow-green"
       >
         {submitting ? (
           <span className="flex items-center justify-center gap-2">
@@ -243,29 +241,26 @@ function TypeCard({
   onClick,
   title,
   desc,
-  icon,
   color,
 }: {
   active: boolean;
   onClick: () => void;
   title: string;
   desc: string;
-  icon: string;
-  color: "blue" | "purple";
+  color: "cyan" | "purple";
 }) {
-  const borderColor = color === "blue" ? "border-accent-blue/40" : "border-accent-purple/40";
-  const bgColor = color === "blue" ? "bg-accent-blue/10" : "bg-accent-purple/10";
+  const borderColor = color === "cyan" ? "border-accent-cyan/40" : "border-accent-purple/40";
+  const bgColor = color === "cyan" ? "bg-accent-cyan/10" : "bg-accent-purple/10";
   return (
     <button
       onClick={onClick}
-      className={`text-left p-4 rounded-xl border transition-all ${
+      className={`text-left p-4 rounded border transition-all ${
         active
           ? `${bgColor} ${borderColor} shadow-glow`
           : "bg-bg-card border-border-primary hover:border-border-hover"
       }`}
     >
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-lg">{icon}</span>
         <span className="font-semibold text-[13px] text-text-primary">{title}</span>
       </div>
       <div className="text-[11px] text-text-muted">{desc}</div>
@@ -282,7 +277,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="text-[11px] text-text-muted block mb-1.5 uppercase tracking-wider">{label}</label>
+      <label className="text-[11px] text-accent-green/60 block mb-1.5 uppercase tracking-wider">{label}</label>
       {children}
     </div>
   );

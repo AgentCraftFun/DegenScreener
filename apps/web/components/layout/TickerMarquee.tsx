@@ -19,7 +19,7 @@ export function TickerMarquee() {
   const doubled = [...tokens, ...tokens];
 
   return (
-    <div className="overflow-hidden border-b border-border-primary bg-bg-primary/50">
+    <div className="overflow-hidden border-b border-border-primary bg-bg-primary/80">
       <div className="flex gap-0 animate-marquee whitespace-nowrap py-1">
         {doubled.map((t, i) => {
           const pct = Number(t.change24hPct);
@@ -32,7 +32,7 @@ export function TickerMarquee() {
               className="inline-flex items-center gap-1.5 px-3 py-0.5 text-[11px] font-mono hover:bg-bg-hover/50 transition-colors rounded"
             >
               <span className={`inline-flex items-center justify-center w-4 h-4 rounded text-[9px] font-bold ${
-                isUp ? "bg-accent-green/20 text-accent-green" : isDown ? "bg-accent-red/20 text-accent-red" : "bg-bg-card text-text-secondary"
+                isUp ? "bg-accent-green/15 text-accent-green" : isDown ? "bg-accent-red/15 text-accent-red" : "bg-bg-card text-text-secondary"
               }`}>
                 {isUp ? "+" : isDown ? "-" : "~"}
               </span>
