@@ -15,7 +15,7 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-# Build shared packages, then web with DB stubbed out
+# Build shared packages, then web with DB stubbed out (v2 — CRT terminal theme)
 ENV SKIP_DB=1
 RUN pnpm --filter @degenscreener/shared build && \
     pnpm --filter @degenscreener/pool-engine build && \
