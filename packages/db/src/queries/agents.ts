@@ -18,6 +18,10 @@ export async function getAgentsByOwner(ownerId: string) {
   return db.select().from(agents).where(eq(agents.ownerId, ownerId));
 }
 
+export async function getActiveAgents() {
+  return db.select().from(agents).where(eq(agents.status, "ACTIVE"));
+}
+
 export async function getActiveAgentsForTick(tick: number) {
   return db
     .select()

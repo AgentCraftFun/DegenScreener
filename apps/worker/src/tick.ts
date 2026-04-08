@@ -95,6 +95,8 @@ export async function runTick(
   if (!ctx.simulationMode && tick % 10 === 0) {
     try {
       await refreshAllAgentBalances();
+      // Check for low-gas agents and send notifications
+      await checkLowGasAgents();
     } catch (e) {
       console.error("[tick] balance refresh error:", e);
     }
@@ -250,6 +252,30 @@ export async function runTick(
   }
 
   return stats;
+}
+
+/**
+ * Check for agents with low ETH and notify owners (max once per 24h per agent).
+ */
+const lowGasNotifiedAt = new Map<string, number>();
+async function checkLowGasAgents() {
+  const activeAgents = await agentQueries.getActiveAgents();
+  for (const agent of activeAgents) {
+    if (parseFloat(agent.ethBalance) < 0.001 && parseFloat(agent.ethBalance) > 0) {
+      const lastNotif = lowGasNotifiedAt.get(agent.id) ?? 0;
+      if (Date.now() - lastNotif > 24 * 60 * 60 * 1000) {
+        try {
+          await notificationQueries.createNotification({
+            userId: agent.ownerId,
+            type: "LOW_GAS",
+            title: "Low Gas Warning",
+            message: `${agent.name}'s wallet is low on ETH for gas (${parseFloat(agent.ethBalance).toFixed(4)} ETH). Top up to keep trading.`,
+          });
+          lowGasNotifiedAt.set(agent.id, Date.now());
+        } catch { /* non-critical */ }
+      }
+    }
+  }
 }
 
 /**

@@ -8,10 +8,12 @@ import {
   agentQueries,
   pendingTxQueries,
   tokenQueries,
+  notificationQueries,
   schema,
   db,
 } from "@degenscreener/db";
 import { eq } from "drizzle-orm";
+import { publishNotification } from "../events.js";
 import { generateTweet, type TweetTrigger } from "../ai/tweet-generator.js";
 import { Personality } from "@degenscreener/shared";
 
@@ -137,7 +139,7 @@ async function handleCreateTokenConfirmed(
 }
 
 async function handleBuyConfirmed(
-  agent: { id: string; personality: string },
+  agent: { id: string; personality: string; ownerId: string; name: string; totalVolume: string },
   txData: Record<string, string>,
 ) {
   // Look up token by address for tweet context
@@ -148,6 +150,18 @@ async function handleBuyConfirmed(
       .from(schema.tokens)
       .where(eq(schema.tokens.contractAddress, txData.tokenAddress));
     ticker = token?.ticker;
+  }
+
+  // FIRST_TRADE notification (if total volume was 0 before this trade)
+  if (Number(agent.totalVolume) === 0 && ticker) {
+    try {
+      await notificationQueries.createNotification({
+        userId: agent.ownerId,
+        type: "FIRST_TRADE",
+        title: "First Trade!",
+        message: `${agent.name} just made its first trade! Bought $${ticker} on the bonding curve.`,
+      });
+    } catch { /* non-critical */ }
   }
 
   // 30% chance of buy tweet
@@ -198,9 +212,29 @@ async function processFailedTransaction(
     `[tx-handler] TX failed for agent ${ptx.agentId}: ${ptx.type} — ${error}`,
   );
 
-  // If gas issue, could mark for gas-aware retry — for now just log
-  if (error.includes("insufficient funds") || error.includes("gas")) {
-    console.warn(`[tx-handler] Gas issue for agent ${ptx.agentId} — will re-evaluate next tick`);
+  // Send TX_FAILED notification to owner
+  const agent = await agentQueries.getAgentById(ptx.agentId);
+  if (agent) {
+    try {
+      const notif = await notificationQueries.createNotification({
+        userId: agent.ownerId,
+        type: "TX_FAILED",
+        title: "Transaction Failed",
+        message: `A ${ptx.type} transaction for ${agent.name} failed: ${error.slice(0, 100)}. No funds lost.`,
+      });
+      const [owner] = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.id, agent.ownerId));
+      if (owner) {
+        await publishNotification(owner.walletAddress, {
+          notificationId: notif.id,
+          type: "TX_FAILED",
+          title: notif.title,
+          message: notif.message,
+        });
+      }
+    } catch { /* non-critical */ }
   }
 }
 
