@@ -6,21 +6,18 @@ import { useAuthStore } from "../../stores/auth-store";
 
 export default function DeployPage() {
   const router = useRouter();
-  const { isConnected, internalBalance } = useAuthStore();
+  const { isConnected } = useAuthStore();
   const [type, setType] = useState<"DEV" | "DEGEN">("DEGEN");
   const [name, setName] = useState("");
   const [handle, setHandle] = useState("");
-  const [funding, setFunding] = useState("50");
   const [personality, setPersonality] = useState("ANALYTICAL");
   const [riskProfile, setRiskProfile] = useState("MODERATE");
   const [launchStyle, setLaunchStyle] = useState("SPICY");
   const [launchFreq, setLaunchFreq] = useState("MEDIUM");
-  const [rugProb, setRugProb] = useState(5);
+  const [launchSource, setLaunchSource] = useState("TRENDING");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  const fee = Number(funding) * 0.05;
-  const net = Number(funding) - fee;
+  const [deployedWallet, setDeployedWallet] = useState("");
 
   const submit = async () => {
     setError("");
@@ -31,7 +28,7 @@ export default function DeployPage() {
           ? {
               launchStyle,
               launchFrequency: launchFreq,
-              rugProbability: rugProb / 100,
+              launchSource,
             }
           : {
               profile: riskProfile,
@@ -41,21 +38,68 @@ export default function DeployPage() {
               takeProfitPct: 100,
               maxPositions: 5,
             };
-      const res = await apiPost<{ agent: { id: string } }>("/api/agents", {
+      const res = await apiPost<{ agent: { id: string; walletAddress?: string } }>("/api/agents", {
         name,
         handle,
         type,
         personality,
-        initialFunding: funding,
         riskProfile: rp,
       });
-      router.push(`/agents/${res.agent.id}`);
+      if (res.agent.walletAddress) {
+        setDeployedWallet(res.agent.walletAddress);
+      } else {
+        router.push(`/agents/${res.agent.id}`);
+      }
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (deployedWallet) {
+    return (
+      <div className="p-3 max-w-2xl mx-auto space-y-3">
+        <h1 className="text-lg font-bold text-accent-green text-glow-green">[ Agent Deployed ]</h1>
+        <div className="bg-bg-card border border-accent-green/20 rounded p-4 space-y-3 shadow-glow">
+          <p className="text-[13px] text-text-primary">Your agent has been created. Fund it with ETH to start trading.</p>
+          <div>
+            <label className="text-[10px] text-accent-green/60 uppercase tracking-wider block mb-1">Agent Wallet Address</label>
+            <div className="flex items-center gap-2 bg-bg-primary border border-border-primary rounded p-2.5">
+              <code className="text-[12px] font-mono text-accent-green text-glow-green flex-1 break-all">{deployedWallet}</code>
+              <button
+                onClick={() => navigator.clipboard.writeText(deployedWallet)}
+                className="px-2 py-1 text-[10px] bg-accent-green/10 border border-accent-green/20 text-accent-green rounded hover:bg-accent-green/20 transition-colors shrink-0"
+              >
+                Copy
+              </button>
+            </div>
+          </div>
+          <div className="text-[11px] text-text-muted space-y-1">
+            <p>Send ETH on Base Sepolia to this address to fund your agent.</p>
+            <p>Dev Agents need ~0.5 ETH (deployment fees + initial liquidity).</p>
+            <p>Degen Agents need ~0.1 ETH (trading capital + gas).</p>
+          </div>
+          <div className="flex gap-2">
+            <a
+              href={`https://sepolia.basescan.org/address/${deployedWallet}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 text-[11px] bg-bg-primary border border-border-primary text-text-secondary rounded hover:border-accent-green/30 hover:text-text-primary transition-colors"
+            >
+              View on BaseScan
+            </a>
+            <button
+              onClick={() => router.push("/portfolio")}
+              className="px-3 py-1.5 text-[11px] bg-accent-green/15 border border-accent-green/30 text-accent-green rounded hover:bg-accent-green/25 transition-colors"
+            >
+              Go to Portfolio
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!isConnected) {
     return (
@@ -84,7 +128,7 @@ export default function DeployPage() {
           active={type === "DEV"}
           onClick={() => setType("DEV")}
           title="Dev Agent"
-          desc="Launch memecoins, earn trading fees, occasionally rug."
+          desc="Launch memecoins based on trending news, earn 3% creator fees forever."
           color="cyan"
         />
         <TypeCard
@@ -117,14 +161,9 @@ export default function DeployPage() {
             />
           </div>
         </Field>
-        <Field label={`Initial Funding (Balance: ${Number(internalBalance).toFixed(2)} DSCREEN)`}>
-          <input
-            type="number"
-            value={funding}
-            onChange={(e) => setFunding(e.target.value)}
-            className="w-full bg-bg-primary border border-border-primary rounded px-3 py-2 text-[13px] text-text-primary focus:outline-none focus:border-accent-green/50 focus:shadow-glow transition-all"
-          />
-        </Field>
+        <div className="bg-bg-primary/50 border border-border-primary rounded p-3 text-[11px] text-text-muted">
+          Agent wallet created automatically. Fund it with ETH after deployment.
+        </div>
         <Field label="Personality">
           <select
             value={personality}
@@ -175,37 +214,53 @@ export default function DeployPage() {
                 <option value="FAST">Fast</option>
               </select>
             </Field>
-            <Field label={`Rug Probability: ${rugProb}%`}>
-              <input
-                type="range"
-                min={0}
-                max={50}
-                value={rugProb}
-                onChange={(e) => setRugProb(Number(e.target.value))}
-                className="w-full"
-              />
-              <div className="flex justify-between text-[10px] text-text-muted mt-0.5">
-                <span>0% (Honest)</span>
-                <span>50% (Degen)</span>
+            <Field label="Launch Based On">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setLaunchSource("TRENDING")}
+                  className={`flex-1 px-3 py-2 rounded text-[12px] font-medium border transition-all ${
+                    launchSource === "TRENDING"
+                      ? "bg-accent-green/10 border-accent-green/30 text-accent-green"
+                      : "bg-bg-primary border-border-primary text-text-secondary hover:border-border-hover"
+                  }`}
+                >
+                  Trending News (AI)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLaunchSource("CREATIVE")}
+                  className={`flex-1 px-3 py-2 rounded text-[12px] font-medium border transition-all ${
+                    launchSource === "CREATIVE"
+                      ? "bg-accent-green/10 border-accent-green/30 text-accent-green"
+                      : "bg-bg-primary border-border-primary text-text-secondary hover:border-border-hover"
+                  }`}
+                >
+                  Creative (Freestyle)
+                </button>
               </div>
             </Field>
           </>
         )}
       </div>
 
-      {/* Cost Breakdown */}
+      {/* Cost Info */}
       <div className="bg-bg-card border border-border-primary rounded p-4 text-[12px] space-y-1.5 shadow-card">
         <div className="flex justify-between">
-          <span className="text-text-muted">Funding</span>
-          <span className="font-mono text-text-primary">{Number(funding).toFixed(2)} DSCREEN</span>
+          <span className="text-text-muted">Agent creation</span>
+          <span className="font-mono text-accent-green">Free</span>
         </div>
         <div className="flex justify-between text-text-muted">
-          <span>Deployment fee (5%)</span>
-          <span className="font-mono">{fee.toFixed(2)}</span>
+          <span>Token deployment (per launch)</span>
+          <span className="font-mono">~0.01 ETH + gas</span>
+        </div>
+        <div className="flex justify-between text-text-muted">
+          <span>Trading fees</span>
+          <span className="font-mono">4% per trade</span>
         </div>
         <div className="flex justify-between font-semibold border-t border-border-primary pt-1.5 mt-1.5">
-          <span className="text-text-primary">Agent starts with</span>
-          <span className="font-mono text-accent-green text-glow-green">{net.toFixed(2)} DSCREEN</span>
+          <span className="text-text-primary">Fund agent wallet with ETH after deploy</span>
+          <span className="font-mono text-accent-green text-glow-green">Base Sepolia</span>
         </div>
       </div>
 
@@ -217,7 +272,7 @@ export default function DeployPage() {
 
       <button
         onClick={submit}
-        disabled={submitting || !name || !handle || Number(funding) <= 0}
+        disabled={submitting || !name || !handle}
         className="w-full bg-accent-green/15 border border-accent-green/30 text-accent-green py-2.5 rounded font-semibold text-[13px] hover:bg-accent-green/25 hover:shadow-glow-green disabled:opacity-40 transition-all text-glow-green"
       >
         {submitting ? (

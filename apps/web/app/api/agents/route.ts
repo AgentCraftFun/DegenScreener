@@ -27,7 +27,7 @@ const CreateSchema = z.object({
   handle: z.string().min(3).max(32).regex(/^[a-zA-Z0-9_]+$/),
   type: z.nativeEnum(AgentType),
   personality: z.nativeEnum(Personality).optional(),
-  initialFunding: z.string().regex(/^\d+(\.\d+)?$/),
+  initialFunding: z.string().regex(/^\d+(\.\d+)?$/).optional(),
   riskProfile: z.record(z.unknown()).optional(),
 });
 
@@ -56,23 +56,26 @@ export async function POST(req: Request) {
     .where(eq(schema.agents.handle, body.handle));
   if (existing) return err(409, "handle already taken");
 
-  // User balance check
-  const [user] = await db
-    .select()
-    .from(schema.users)
-    .where(eq(schema.users.id, auth.user.userId));
-  if (!user) return err(404, "user not found");
-  const bal = new Decimal(user.internalBalance);
-  const funding = new Decimal(body.initialFunding);
-  if (bal.lt(funding)) return err(400, "insufficient balance");
+  // V2: No balance check needed — agent gets funded via ETH transfer after creation
+  const funding = body.initialFunding ? new Decimal(body.initialFunding) : new Decimal(0);
 
   const result = await db.transaction(async (tx) => {
-    await tx
-      .update(schema.users)
-      .set({
-        internalBalance: sql`${schema.users.internalBalance} - ${funding.toFixed(18)}`,
-      })
-      .where(eq(schema.users.id, auth.user.userId));
+    // Optionally deduct from internal balance if V1-style funding provided
+    if (funding.gt(0)) {
+      const [user] = await tx
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.id, auth.user.userId));
+      if (user && new Decimal(user.internalBalance).gte(funding)) {
+        await tx
+          .update(schema.users)
+          .set({
+            internalBalance: sql`${schema.users.internalBalance} - ${funding.toFixed(18)}`,
+          })
+          .where(eq(schema.users.id, auth.user.userId));
+      }
+    }
+
     const [agent] = await tx
       .insert(schema.agents)
       .values({
@@ -87,10 +90,13 @@ export async function POST(req: Request) {
         nextEvalTick: randInt(1, 5),
       })
       .returning();
-    return agent;
+    return agent!;
   });
 
-  return json({ agent: result }, 201);
+  // V2: Create agent wallet (if worker creates it, just read it back)
+  // The wallet will be created by the worker's wallet manager on first evaluation.
+  // Return the agent with its wallet address if already set.
+  return json({ agent: { ...result, walletAddress: result.walletAddress ?? null } }, 201);
 }
 
 export async function GET(req: Request) {
