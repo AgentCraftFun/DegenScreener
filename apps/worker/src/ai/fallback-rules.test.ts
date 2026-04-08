@@ -23,7 +23,36 @@ test("rugged token forces SELL_ALL", () => {
   assert.equal(r.action?.kind, "SELL_ALL");
 });
 
-test("6x holding triggers take-profit SELL_HALF", () => {
+test("dead token forces SELL_ALL", () => {
+  seedRng(1);
+  const r = checkFallbackRules(
+    { id: "a", balance: "100", riskProfile: { profile: RiskProfile.MODERATE } },
+    [
+      {
+        tokenId: "t1",
+        ticker: "X",
+        quantity: "100",
+        avgEntryPrice: "1",
+        currentPrice: "0",
+        tokenStatus: "DEAD",
+      },
+    ],
+  );
+  assert.equal(r.triggered, true);
+  assert.equal(r.action?.kind, "SELL_ALL");
+});
+
+test("low ETH balance forces HOLD (gas check)", () => {
+  seedRng(5);
+  const r = checkFallbackRules(
+    { id: "a", balance: "0.0001", ethBalance: "0.0001", riskProfile: { profile: RiskProfile.MODERATE } },
+    [],
+  );
+  assert.equal(r.triggered, true);
+  assert.equal(r.action?.kind, "HOLD");
+});
+
+test("6x holding does NOT trigger — Claude decides", () => {
   seedRng(2);
   const r = checkFallbackRules(
     { id: "a", balance: "100", riskProfile: { profile: RiskProfile.MODERATE } },
@@ -38,76 +67,49 @@ test("6x holding triggers take-profit SELL_HALF", () => {
       },
     ],
   );
-  assert.equal(r.triggered, true);
-  assert.equal(r.action?.kind, "SELL_HALF");
+  assert.equal(r.triggered, false);
 });
 
-test("-40% loss triggers stop-loss for Conservative", () => {
+test("-95% loss does NOT trigger for any profile — Claude decides", () => {
   seedRng(3);
-  const r = checkFallbackRules(
-    {
-      id: "a",
-      balance: "100",
-      riskProfile: { profile: RiskProfile.CONSERVATIVE },
-    },
-    [
-      {
-        tokenId: "t1",
-        ticker: "X",
-        quantity: "100",
-        avgEntryPrice: "1",
-        currentPrice: "0.6",
-        tokenStatus: "ACTIVE",
-      },
-    ],
-  );
-  assert.equal(r.triggered, true);
-  assert.equal(r.action?.kind, "SELL_ALL");
+  for (const profile of [RiskProfile.CONSERVATIVE, RiskProfile.MODERATE, RiskProfile.AGGRESSIVE, RiskProfile.FULL_DEGEN]) {
+    const r = checkFallbackRules(
+      { id: "a", balance: "100", riskProfile: { profile } },
+      [
+        {
+          tokenId: "t1",
+          ticker: "X",
+          quantity: "100",
+          avgEntryPrice: "1",
+          currentPrice: "0.05",
+          tokenStatus: "ACTIVE",
+        },
+      ],
+    );
+    assert.equal(r.triggered, false, `${profile} should not trigger on loss`);
+  }
 });
 
-test("Full Degen has no stop-loss", () => {
+test("graduated token in profit does NOT trigger — Claude decides", () => {
   seedRng(4);
   const r = checkFallbackRules(
-    {
-      id: "a",
-      balance: "100",
-      riskProfile: { profile: RiskProfile.FULL_DEGEN },
-    },
+    { id: "a", balance: "100", riskProfile: { profile: RiskProfile.MODERATE } },
     [
       {
         tokenId: "t1",
         ticker: "X",
         quantity: "100",
         avgEntryPrice: "1",
-        currentPrice: "0.05", // 95% loss
+        currentPrice: "5",
         tokenStatus: "ACTIVE",
+        phase: "GRADUATED",
       },
     ],
   );
   assert.equal(r.triggered, false);
 });
 
-test("low ETH balance forces HOLD (gas check)", () => {
-  seedRng(5);
-  const r = checkFallbackRules(
-    { id: "a", balance: "0.0001", ethBalance: "0.0001", riskProfile: { profile: RiskProfile.MODERATE } },
-    [],
-  );
-  assert.equal(r.triggered, true);
-  assert.equal(r.action?.kind, "HOLD");
-});
-
-test("low ETH balance forces HOLD (balance threshold)", () => {
-  seedRng(5);
-  const r = checkFallbackRules(
-    { id: "a", balance: "0.0008", ethBalance: "0.0008", riskProfile: { profile: RiskProfile.MODERATE } },
-    [],
-  );
-  assert.equal(r.triggered, true);
-  assert.equal(r.action?.kind, "HOLD");
-});
-
-test("no rules trigger with healthy holdings", () => {
+test("healthy holdings — no rules trigger", () => {
   seedRng(6);
   const r = checkFallbackRules(
     { id: "a", balance: "100", riskProfile: { profile: RiskProfile.MODERATE } },

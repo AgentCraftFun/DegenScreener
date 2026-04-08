@@ -1,6 +1,5 @@
 import { Decimal } from "decimal.js";
 import { RiskProfile } from "@degenscreener/shared";
-import { rand } from "../util/rng.js";
 
 export interface HoldingCtx {
   tokenId: string;
@@ -29,36 +28,23 @@ export interface FallbackResult {
   action?: FallbackAction;
 }
 
-// Randomize thresholds ±10%
-function jitter(base: number): number {
-  return base * (0.9 + rand() * 0.2);
-}
-
-function stopLossPctFor(profile?: RiskProfile): number | null {
-  switch (profile) {
-    case RiskProfile.CONSERVATIVE:
-      return -30;
-    case RiskProfile.MODERATE:
-      return -50;
-    case RiskProfile.AGGRESSIVE:
-      return -70;
-    case RiskProfile.FULL_DEGEN:
-      return null;
-    default:
-      return -50;
-  }
-}
-
 const MIN_GAS_ETH = 0.0005; // 0.0005 ETH — minimum to cover gas
 
+/**
+ * Fallback rules — ONLY blockchain-reality constraints.
+ * All trading decisions (take-profit, stop-loss, position sizing) are
+ * made by Claude via the prompt system. These rules only catch cases
+ * where a transaction is physically impossible.
+ */
 export function checkFallbackRules(
   agent: AgentCtx,
   holdings: HoldingCtx[],
 ): FallbackResult {
-  // Rule 0: GAS_CHECK — if agent ETH balance < min gas, force HOLD
   const ethBal = agent.ethBalance
     ? parseFloat(agent.ethBalance)
     : parseFloat(agent.balance);
+
+  // Rule 1: Can't trade without gas money
   if (ethBal < MIN_GAS_ETH) {
     return {
       triggered: true,
@@ -66,90 +52,23 @@ export function checkFallbackRules(
     };
   }
 
-  // Rule 1: force sell rugged tokens (V1 legacy, could still happen post-graduation on Uniswap)
+  // Rule 2: Token is dead/rugged — no market exists to sell into gracefully,
+  // but still attempt exit so the agent isn't stuck holding worthless tokens
   for (const h of holdings) {
-    if (h.tokenStatus === "RUGGED" && new Decimal(h.quantity).gt(0)) {
-      return {
-        triggered: true,
-        action: {
-          kind: "SELL_ALL",
-          tokenId: h.tokenId,
-          reason: "Token rugged - exit immediately",
-        },
-      };
-    }
-  }
-
-  // Rule 2: take-profit at ~5x
-  const tpMultiplier = jitter(5);
-  for (const h of holdings) {
-    const entry = new Decimal(h.avgEntryPrice);
-    if (entry.lte(0)) continue;
-    const mult = new Decimal(h.currentPrice).div(entry);
-    if (mult.gte(tpMultiplier)) {
-      return {
-        triggered: true,
-        action: {
-          kind: "SELL_HALF",
-          tokenId: h.tokenId,
-          reason: `Take-profit at ${mult.toFixed(2)}x`,
-        },
-      };
-    }
-  }
-
-  // Rule 3: stop-loss (profile-dependent)
-  const slPct = stopLossPctFor(agent.riskProfile.profile);
-  if (slPct !== null) {
-    const jittered = jitter(Math.abs(slPct));
-    for (const h of holdings) {
-      const entry = new Decimal(h.avgEntryPrice);
-      if (entry.lte(0)) continue;
-      const pct = new Decimal(h.currentPrice)
-        .sub(entry)
-        .div(entry)
-        .mul(100);
-      if (pct.lte(-jittered)) {
+    if (h.tokenStatus === "RUGGED" || h.tokenStatus === "DEAD") {
+      if (new Decimal(h.quantity).gt(0)) {
         return {
           triggered: true,
           action: {
             kind: "SELL_ALL",
             tokenId: h.tokenId,
-            reason: `Stop-loss at ${pct.toFixed(1)}%`,
+            reason: `Token ${h.tokenStatus.toLowerCase()} — attempting exit`,
           },
         };
       }
     }
   }
 
-  // Rule 4: GRADUATION_AWARENESS — if a held token just graduated,
-  // consider selling some (post-graduation trades go through Uniswap with different gas)
-  for (const h of holdings) {
-    if (h.phase === "GRADUATED") {
-      const entry = new Decimal(h.avgEntryPrice);
-      if (entry.lte(0)) continue;
-      const mult = new Decimal(h.currentPrice).div(entry);
-      // If graduated and in profit, take some off the table
-      if (mult.gte(2)) {
-        return {
-          triggered: true,
-          action: {
-            kind: "SELL_HALF",
-            tokenId: h.tokenId,
-            reason: `Token graduated at ${mult.toFixed(2)}x — taking partial profit`,
-          },
-        };
-      }
-    }
-  }
-
-  // Rule 5: insufficient ETH balance → HOLD (threshold in ETH)
-  if (ethBal < 0.001) {
-    return {
-      triggered: true,
-      action: { kind: "HOLD", reason: "Insufficient ETH balance for trading" },
-    };
-  }
-
+  // No hardcoded trading rules — Claude decides everything else
   return { triggered: false };
 }

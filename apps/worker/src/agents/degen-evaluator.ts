@@ -230,17 +230,19 @@ export async function evaluateDegenAgent(
     const token = activeTokens.find((t) => t.ticker === dec.token_ticker);
     if (!token || !token.contractAddress) return { action: "HOLD", executed: false };
 
-    // Amount is in ETH now
+    // Claude decides the size — only cap at actual balance (can't spend more than you have)
     const amt = new Decimal(dec.amount);
     const bal = new Decimal(agent.ethBalance);
-    const capped = Decimal.min(amt, bal.mul("0.4")); // Max 40% of ETH balance
-    if (capped.lte(0)) return { action: "HOLD", executed: false };
+    const gasReserve = new Decimal("0.001"); // keep enough for gas
+    const maxSpend = Decimal.max(bal.sub(gasReserve), 0);
+    const finalAmt = Decimal.min(amt, maxSpend);
+    if (finalAmt.lte(0)) return { action: "HOLD", executed: false };
 
     const intent: TradeIntent = {
       agentId: agent.id,
       type: "BUY",
       tokenAddress: token.contractAddress as `0x${string}`,
-      ethAmount: BigInt(capped.mul("1e18").toFixed(0)),
+      ethAmount: BigInt(finalAmt.mul("1e18").toFixed(0)),
     };
 
     const intentResult = await executeIntent(intent);
