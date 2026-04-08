@@ -24,11 +24,19 @@ export async function runLoop(opts: LoopOptions): Promise<{
     rugs: 0,
     tweets: 0,
     broke: 0,
+    txSubmitted: 0,
+    txConfirmed: 0,
   };
 
   const fastForward = opts.fastForwardTicks ?? 0;
   const runForever = fastForward === 0;
   const target = fastForward > 0 ? tick + BigInt(fastForward) : -1n;
+
+  // Fast-forward uses simulation mode (no on-chain txs — V1 server-side execution)
+  const simulationMode = fastForward > 0;
+  if (simulationMode) {
+    console.log(`[loop] Fast-forward mode: ${fastForward} ticks (simulation only, no on-chain txs)`);
+  }
 
   let stop = false;
   const shutdown = () => {
@@ -45,12 +53,15 @@ export async function runLoop(opts: LoopOptions): Promise<{
       const stats = await runTick(tickNum, {
         useAi: opts.useAi ?? false,
         redis: opts.redis,
+        simulationMode,
       });
       totals.trades += stats.trades;
       totals.launches += stats.launches;
       totals.rugs += stats.rugs;
       totals.tweets += stats.tweets;
       totals.broke += stats.broke;
+      totals.txSubmitted += stats.txSubmitted;
+      totals.txConfirmed += stats.txConfirmed;
       opts.onTick?.(stats);
     } catch (e) {
       console.error(`[loop] tick ${tick} error:`, e);

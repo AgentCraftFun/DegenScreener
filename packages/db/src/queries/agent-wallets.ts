@@ -33,3 +33,7 @@ export async function updateBalance(agentId: string, balance: string) {
     .returning();
   return row ?? null;
 }
+
+export async function getAllWallets() {
+  return db.select({ agentId: agentWallets.agentId, address: agentWallets.address }).from(agentWallets);
+}
