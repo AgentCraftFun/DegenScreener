@@ -10,6 +10,7 @@
     "test": "echo 'no tests yet' && exit 0"
   },
   "dependencies": {
+    "@degenscreener/blockchain": "workspace:*",
     "@degenscreener/db": "workspace:*",
     "@degenscreener/shared": "workspace:*",
     "@degenscreener/pool-engine": "workspace:*",
