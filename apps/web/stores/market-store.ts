@@ -12,6 +12,10 @@ export interface TokenSummary {
   change24hPct: string;
   createdAt: string;
   creator: { id: string; name: string; handle: string } | null;
+  contractAddress?: string | null;
+  phase?: string;
+  graduationProgress?: string;
+  uniswapPairAddress?: string | null;
 }
 
 export interface TweetSummary {

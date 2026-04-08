@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { Decimal } from "decimal.js";
-import { eq, desc, asc, sql, gte } from "drizzle-orm";
+import { eq, desc, asc, sql, gte, and } from "drizzle-orm";
 import { db, schema } from "@degenscreener/db";
 import { parsePagination } from "../../../lib/api";
 
@@ -11,6 +11,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const filter = url.searchParams.get("filter") ?? "all";
   const order = url.searchParams.get("order") ?? "desc";
+  const phase = url.searchParams.get("phase"); // pre_bond | graduated | all
   const { limit, offset } = parsePagination(url);
 
   // Join tokens with pools
@@ -27,11 +28,28 @@ export async function GET(req: Request) {
     )
     .leftJoin(schema.agents, eq(schema.agents.id, schema.tokens.creatorAgentId));
 
-  let query: typeof base;
+  // Build where conditions
+  const conditions = [];
   if (filter === "rugged") {
-    query = base.where(eq(schema.tokens.status, "RUGGED")) as typeof base;
+    conditions.push(eq(schema.tokens.status, "RUGGED"));
+  } else if (filter === "graduated") {
+    conditions.push(eq(schema.tokens.phase, "GRADUATED"));
   } else {
-    query = base.where(eq(schema.tokens.status, "ACTIVE")) as typeof base;
+    conditions.push(eq(schema.tokens.status, "ACTIVE"));
+  }
+
+  // Phase filter
+  if (phase === "pre_bond") {
+    conditions.push(eq(schema.tokens.phase, "PRE_BOND"));
+  } else if (phase === "graduated") {
+    conditions.push(eq(schema.tokens.phase, "GRADUATED"));
+  }
+
+  let query: typeof base;
+  if (conditions.length > 1) {
+    query = base.where(and(...conditions)) as typeof base;
+  } else {
+    query = base.where(conditions[0]!) as typeof base;
   }
 
   const rows = await query.limit(500);
@@ -82,6 +100,17 @@ export async function GET(req: Request) {
             .mul(100)
             .toFixed(2)
         : "0";
+    // Graduation progress: estimate from initial liquidity if available
+    let graduationProgress = "0";
+    if (token.phase === "GRADUATED") {
+      graduationProgress = "100.00";
+    } else if (token.initialLiquidityEth && new Decimal(token.initialLiquidityEth).gt(0)) {
+      // Rough estimate: initialLiquidityEth / typical threshold (4 ETH)
+      const threshold = new Decimal("4");
+      const pct = new Decimal(token.initialLiquidityEth).div(threshold).mul(100);
+      graduationProgress = Decimal.min(pct, new Decimal(100)).toFixed(2);
+    }
+
     return {
       id: token.id,
       ticker: token.ticker,
@@ -95,6 +124,10 @@ export async function GET(req: Request) {
       creator: creator
         ? { id: creator.id, name: creator.name, handle: creator.handle }
         : null,
+      contractAddress: token.contractAddress,
+      phase: token.phase,
+      graduationProgress,
+      uniswapPairAddress: token.uniswapPairAddress,
     };
   });
 
@@ -107,6 +140,8 @@ export async function GET(req: Request) {
     enriched.sort((a, b) => Number(b.change24hPct) - Number(a.change24hPct));
   } else if (filter === "losers") {
     enriched.sort((a, b) => Number(a.change24hPct) - Number(b.change24hPct));
+  } else if (filter === "graduated") {
+    enriched.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
   if (order === "asc") enriched.reverse();
 

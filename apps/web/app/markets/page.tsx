@@ -10,7 +10,7 @@ const FILTERS = [
   { key: "new", label: "Newest" },
   { key: "gainers", label: "Gainers" },
   { key: "losers", label: "Losers" },
-  { key: "rugged", label: "Rugged" },
+  { key: "graduated", label: "Graduated" },
 ];
 
 const TIME_RANGES = ["5M", "1H", "6H", "24H"];
@@ -107,12 +107,11 @@ export default function MarketsPage() {
               <tr className="text-[10px] uppercase tracking-wider text-accent-green/60 border-b border-border-primary bg-bg-secondary/50">
                 <th className="text-left px-3 py-2.5 w-8">#</th>
                 <th className="text-left px-3 py-2.5">Token</th>
+                <th className="text-center px-3 py-2.5 hidden md:table-cell">Phase</th>
                 <th className="text-right px-3 py-2.5">Price</th>
                 <th className="text-right px-3 py-2.5 hidden sm:table-cell">Age</th>
-                <th className="text-right px-3 py-2.5 hidden md:table-cell">Buys</th>
-                <th className="text-right px-3 py-2.5 hidden md:table-cell">Sells</th>
                 <th className="text-right px-3 py-2.5 hidden md:table-cell">Volume</th>
-                <th className="text-right px-3 py-2.5 hidden lg:table-cell">Makers</th>
+                <th className="text-center px-3 py-2.5 hidden md:table-cell">Progress</th>
                 <th className="text-right px-3 py-2.5">5M</th>
                 <th className="text-right px-3 py-2.5">1H</th>
                 <th className="text-right px-3 py-2.5 hidden sm:table-cell">24H</th>
@@ -122,7 +121,7 @@ export default function MarketsPage() {
             <tbody>
               {loading && list.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="text-center py-12 text-text-muted">
+                  <td colSpan={11} className="text-center py-12 text-text-muted">
                     <div className="flex items-center justify-center gap-2">
                       <svg className="w-4 h-4 animate-spin text-accent-green" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -134,7 +133,7 @@ export default function MarketsPage() {
                 </tr>
               ) : list.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="text-center py-12 text-text-muted">
+                  <td colSpan={11} className="text-center py-12 text-text-muted">
                     No tokens found
                   </td>
                 </tr>
@@ -143,6 +142,8 @@ export default function MarketsPage() {
                   const pct24 = Number(t.change24hPct);
                   const pct5m = pct24 * 0.05;
                   const pct1h = pct24 * 0.3;
+                  const isGraduated = t.phase === "GRADUATED";
+                  const gradPct = Number(t.graduationProgress ?? 0);
                   return (
                     <tr
                       key={t.id}
@@ -166,6 +167,9 @@ export default function MarketsPage() {
                           </div>
                         </Link>
                       </td>
+                      <td className="px-3 py-2 text-center hidden md:table-cell">
+                        <PhaseBadge phase={t.phase} />
+                      </td>
                       <td className="px-3 py-2 text-right font-mono text-text-primary">
                         {formatPrice(t.price)}
                       </td>
@@ -173,16 +177,22 @@ export default function MarketsPage() {
                         {formatRelative(t.createdAt)}
                       </td>
                       <td className="px-3 py-2 text-right font-mono text-text-secondary hidden md:table-cell">
-                        —
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono text-text-secondary hidden md:table-cell">
-                        —
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono text-text-secondary hidden md:table-cell">
                         {formatNumber(t.volume24h)}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono text-text-secondary hidden lg:table-cell">
-                        —
+                      <td className="px-3 py-2 hidden md:table-cell">
+                        {isGraduated ? (
+                          <div className="text-[10px] text-center text-amber-400 font-medium">Graduated</div>
+                        ) : (
+                          <div className="flex items-center gap-1.5">
+                            <div className="flex-1 h-1.5 bg-bg-primary rounded-full overflow-hidden border border-border-primary">
+                              <div
+                                className="h-full bg-accent-green rounded-full transition-all shadow-[0_0_4px_rgba(0,255,65,0.4)]"
+                                style={{ width: `${Math.min(gradPct, 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] font-mono text-text-muted w-8 text-right">{gradPct.toFixed(0)}%</span>
+                          </div>
+                        )}
                       </td>
                       <td className="px-3 py-2 text-right font-mono">
                         <PctCell value={pct5m} />
@@ -205,6 +215,28 @@ export default function MarketsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function PhaseBadge({ phase }: { phase?: string }) {
+  if (phase === "GRADUATED") {
+    return (
+      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-400/15 text-amber-400 border border-amber-400/20">
+        Graduated
+      </span>
+    );
+  }
+  if (phase === "PRE_BOND") {
+    return (
+      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-accent-green/15 text-accent-green border border-accent-green/20 animate-pulse">
+        Pre-Bond
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-bg-secondary text-text-muted border border-border-primary">
+      {phase ?? "V1"}
+    </span>
   );
 }
 
