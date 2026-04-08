@@ -10,3 +10,12 @@ export {
   decryptPrivateKey,
   generateEncryptionKey,
 } from "./crypto.js";
+export {
+  initWalletManager,
+  createAgentWallet,
+  getAgentWallet,
+  getAgentPrivateKey,
+  getAgentEthBalance,
+  refreshAllBalances,
+  isAgentBroke,
+} from "./wallet-manager.js";

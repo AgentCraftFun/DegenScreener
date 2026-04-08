@@ -72,3 +72,12 @@ export async function updateAgentConfig(
     .returning();
   return row!;
 }
+
+export async function updateAgentWallet(id: string, walletAddress: string) {
+  const [row] = await db
+    .update(agents)
+    .set({ walletAddress })
+    .where(eq(agents.id, id))
+    .returning();
+  return row!;
+}
