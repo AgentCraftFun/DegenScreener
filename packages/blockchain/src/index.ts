@@ -38,3 +38,20 @@ export {
   type TxResult,
   type TxPipelineCallbacks,
 } from "./tx-pipeline.js";
+export {
+  indexFactoryEvents,
+  indexBondingCurveEvents,
+  watchTokenCreations,
+  watchTrades,
+  watchGraduations,
+  watchUniswapSwaps,
+  startEventIndexer,
+  type TokenCreatedEvent,
+  type TradeEvent,
+  type TokenGraduatedEvent,
+  type CurveInitializedEvent,
+  type UniswapSwapEvent,
+  type IndexedEvent,
+  type EventHandlers,
+  type IndexerConfig,
+} from "./event-indexer.js";
