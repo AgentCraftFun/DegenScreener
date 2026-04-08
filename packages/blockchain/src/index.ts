@@ -55,3 +55,30 @@ export {
   type EventHandlers,
   type IndexerConfig,
 } from "./event-indexer.js";
+
+// V2 contract helpers
+export {
+  getAllTokensLength,
+  getTokenAtIndex,
+  getDeployFee,
+  getTokenCreator,
+  buildCreateTokenTx,
+} from "./contracts/factory.js";
+export {
+  getCurveState,
+  getPrice,
+  getGraduationThreshold,
+  buildBuyTx,
+  buildSellTx,
+  type CurveState,
+} from "./contracts/bonding-curve.js";
+export {
+  getTokenBalance,
+  getTokenAllowance,
+  getTokenTotalSupply,
+  getTokenName,
+  getTokenSymbol,
+  isTokenTaxExempt,
+  buildApproveTx,
+  buildTransferTx,
+} from "./contracts/degen-token.js";
