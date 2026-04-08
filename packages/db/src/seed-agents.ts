@@ -11,13 +11,16 @@ import {
 } from "@degenscreener/shared";
 import { sql } from "drizzle-orm";
 
+// ---------------------------------------------------------------------------
+// V2 Seed Agents — ETH-denominated, no rug probability
+// ---------------------------------------------------------------------------
+
 interface DevAgentDef {
   name: string;
   handle: string;
   style: LaunchStyle;
-  rug: number;
   freq: LaunchFrequency;
-  balance: string;
+  personality: Personality;
 }
 
 interface DegenAgentDef {
@@ -25,37 +28,38 @@ interface DegenAgentDef {
   handle: string;
   profile: RiskProfile;
   personality: Personality;
-  balance: string;
+  sizing: PositionSizing;
+  takeProfit: TakeProfitStrategy;
 }
 
 const DEVS: DevAgentDef[] = [
-  { name: "TokenFactory", handle: "TokenFactory", style: LaunchStyle.MILD, rug: 0.03, freq: LaunchFrequency.MEDIUM, balance: "400" },
-  { name: "DegenerateDev", handle: "DegDev", style: LaunchStyle.DEGEN, rug: 0.15, freq: LaunchFrequency.FAST, balance: "300" },
-  { name: "FairLaunchKing", handle: "FairLaunchKing", style: LaunchStyle.MILD, rug: 0.0, freq: LaunchFrequency.SLOW, balance: "500" },
-  { name: "MemeChef", handle: "MemeChef", style: LaunchStyle.SPICY, rug: 0.08, freq: LaunchFrequency.MEDIUM, balance: "350" },
-  { name: "RugLordXx", handle: "RugLordXx", style: LaunchStyle.DEGEN, rug: 0.25, freq: LaunchFrequency.FAST, balance: "250" },
-  { name: "SolidDev", handle: "SolidDev", style: LaunchStyle.MILD, rug: 0.02, freq: LaunchFrequency.SLOW, balance: "450" },
-  { name: "YOLOLauncher", handle: "YOLOLauncher", style: LaunchStyle.SPICY, rug: 0.10, freq: LaunchFrequency.FAST, balance: "200" },
+  { name: "TokenFactory", handle: "TokenFactory", style: LaunchStyle.MILD, freq: LaunchFrequency.MEDIUM, personality: Personality.ANALYTICAL },
+  { name: "DegenerateDev", handle: "DegDev", style: LaunchStyle.DEGEN, freq: LaunchFrequency.FAST, personality: Personality.HYPE_BEAST },
+  { name: "FairLaunchKing", handle: "FairLaunchKing", style: LaunchStyle.MILD, freq: LaunchFrequency.SLOW, personality: Personality.ANALYTICAL },
+  { name: "MemeChef", handle: "MemeChef", style: LaunchStyle.SPICY, freq: LaunchFrequency.MEDIUM, personality: Personality.TROLL },
+  { name: "TrendSpotter", handle: "TrendSpotter", style: LaunchStyle.SPICY, freq: LaunchFrequency.FAST, personality: Personality.HYPE_BEAST },
+  { name: "SolidDev", handle: "SolidDev", style: LaunchStyle.MILD, freq: LaunchFrequency.SLOW, personality: Personality.ANALYTICAL },
+  { name: "ViralMinter", handle: "ViralMinter", style: LaunchStyle.DEGEN, freq: LaunchFrequency.FAST, personality: Personality.TROLL },
 ];
 
 const DEGENS: DegenAgentDef[] = [
-  { name: "SafeHands", handle: "SafeHands", profile: RiskProfile.CONSERVATIVE, personality: Personality.ANALYTICAL, balance: "200" },
-  { name: "CautiousCarl", handle: "CautiousCarl", profile: RiskProfile.CONSERVATIVE, personality: Personality.DOOMER, balance: "180" },
-  { name: "RiskManager", handle: "RiskManager", profile: RiskProfile.CONSERVATIVE, personality: Personality.ANALYTICAL, balance: "250" },
-  { name: "SmartMoney", handle: "SmartMoney", profile: RiskProfile.MODERATE, personality: Personality.ANALYTICAL, balance: "300" },
-  { name: "TrendFollower", handle: "TrendFollower", profile: RiskProfile.MODERATE, personality: Personality.HYPE_BEAST, balance: "250" },
-  { name: "BalancedBet", handle: "BalancedBet", profile: RiskProfile.MODERATE, personality: Personality.ANALYTICAL, balance: "220" },
-  { name: "SteadyEddie", handle: "SteadyEddie", profile: RiskProfile.MODERATE, personality: Personality.TROLL, balance: "200" },
-  { name: "AlphaHunter", handle: "AlphaHunter", profile: RiskProfile.AGGRESSIVE, personality: Personality.HYPE_BEAST, balance: "180" },
-  { name: "MomentumKing", handle: "MomentumKing", profile: RiskProfile.AGGRESSIVE, personality: Personality.HYPE_BEAST, balance: "150" },
-  { name: "SwingTrader", handle: "SwingTrader", profile: RiskProfile.AGGRESSIVE, personality: Personality.ANALYTICAL, balance: "200" },
-  { name: "DegenDave", handle: "DegenDave", profile: RiskProfile.AGGRESSIVE, personality: Personality.TROLL, balance: "150" },
-  { name: "APEorDIE", handle: "APEorDIE", profile: RiskProfile.FULL_DEGEN, personality: Personality.HYPE_BEAST, balance: "120" },
-  { name: "YOLOswaggins", handle: "YOLOswaggins", profile: RiskProfile.FULL_DEGEN, personality: Personality.TROLL, balance: "100" },
+  { name: "SafeHands", handle: "SafeHands", profile: RiskProfile.CONSERVATIVE, personality: Personality.ANALYTICAL, sizing: PositionSizing.SMALL, takeProfit: TakeProfitStrategy.SCALE_OUT },
+  { name: "CautiousCarl", handle: "CautiousCarl", profile: RiskProfile.CONSERVATIVE, personality: Personality.DOOMER, sizing: PositionSizing.SMALL, takeProfit: TakeProfitStrategy.SELL_INITIALS },
+  { name: "RiskManager", handle: "RiskManager", profile: RiskProfile.CONSERVATIVE, personality: Personality.ANALYTICAL, sizing: PositionSizing.SMALL, takeProfit: TakeProfitStrategy.SCALE_OUT },
+  { name: "SmartMoney", handle: "SmartMoney", profile: RiskProfile.MODERATE, personality: Personality.ANALYTICAL, sizing: PositionSizing.MEDIUM, takeProfit: TakeProfitStrategy.SCALE_OUT },
+  { name: "TrendFollower", handle: "TrendFollower", profile: RiskProfile.MODERATE, personality: Personality.HYPE_BEAST, sizing: PositionSizing.MEDIUM, takeProfit: TakeProfitStrategy.SCALE_OUT },
+  { name: "BalancedBet", handle: "BalancedBet", profile: RiskProfile.MODERATE, personality: Personality.ANALYTICAL, sizing: PositionSizing.MEDIUM, takeProfit: TakeProfitStrategy.SELL_INITIALS },
+  { name: "SteadyEddie", handle: "SteadyEddie", profile: RiskProfile.MODERATE, personality: Personality.TROLL, sizing: PositionSizing.MEDIUM, takeProfit: TakeProfitStrategy.DIAMOND_HANDS },
+  { name: "AlphaHunter", handle: "AlphaHunter", profile: RiskProfile.AGGRESSIVE, personality: Personality.HYPE_BEAST, sizing: PositionSizing.LARGE, takeProfit: TakeProfitStrategy.SCALE_OUT },
+  { name: "MomentumKing", handle: "MomentumKing", profile: RiskProfile.AGGRESSIVE, personality: Personality.HYPE_BEAST, sizing: PositionSizing.LARGE, takeProfit: TakeProfitStrategy.DIAMOND_HANDS },
+  { name: "SwingTrader", handle: "SwingTrader", profile: RiskProfile.AGGRESSIVE, personality: Personality.ANALYTICAL, sizing: PositionSizing.LARGE, takeProfit: TakeProfitStrategy.SCALE_OUT },
+  { name: "DegenDave", handle: "DegenDave", profile: RiskProfile.AGGRESSIVE, personality: Personality.TROLL, sizing: PositionSizing.LARGE, takeProfit: TakeProfitStrategy.SELL_INITIALS },
+  { name: "APEorDIE", handle: "APEorDIE", profile: RiskProfile.FULL_DEGEN, personality: Personality.HYPE_BEAST, sizing: PositionSizing.YOLO, takeProfit: TakeProfitStrategy.DIAMOND_HANDS },
+  { name: "YOLOswaggins", handle: "YOLOswaggins", profile: RiskProfile.FULL_DEGEN, personality: Personality.TROLL, sizing: PositionSizing.YOLO, takeProfit: TakeProfitStrategy.DIAMOND_HANDS },
 ];
 
 async function main() {
-  console.log("seeding platform ecosystem...");
+  console.log("seeding V2 platform ecosystem...");
 
   // Ensure platform treasury user exists
   const platformWallet = "0xplatformtreasury";
@@ -69,21 +73,22 @@ async function main() {
       .insert(users)
       .values({
         walletAddress: platformWallet,
-        internalBalance: "10000",
-        totalDeposited: "10000",
+        internalBalance: "0",
+        totalDeposited: "0",
       })
       .returning();
     platformUser = created!;
   }
 
-  // Skip agents with a name that's already in our seed list
+  // Skip agents whose handle already exists
   const existingAgents = await db
-    .select({ name: agents.name, handle: agents.handle })
+    .select({ handle: agents.handle })
     .from(agents)
     .where(sql`owner_id = ${platformUser.id}`);
   const existingHandles = new Set(existingAgents.map((a) => a.handle));
 
-  // Deploy Dev Agents
+  // Deploy Dev Agents (V2: no rug probability, wallets created by worker on first eval)
+  let devCount = 0;
   let devIdx = 0;
   for (const d of DEVS) {
     if (existingHandles.has(d.handle)) { devIdx++; continue; }
@@ -92,19 +97,21 @@ async function main() {
       name: d.name,
       handle: d.handle,
       type: AgentType.DEV,
-      balance: d.balance,
+      balance: "0", // V2: no internal balance, agents use real ETH
+      ethBalance: "0", // Wallet funded externally with testnet ETH
       riskProfile: {
         launchStyle: d.style,
         launchFrequency: d.freq,
-        rugProbability: d.rug,
-        initialLiquidity: "30",
+        // V2: no rugProbability — graduation replaces rugging
       },
-      personality: Personality.HYPE_BEAST,
+      personality: d.personality,
       nextEvalTick: (devIdx++ % 5) + 1,
     });
+    devCount++;
   }
 
-  // Deploy Degens
+  // Deploy Degen Agents
+  let degenCount = 0;
   let degIdx = 0;
   for (const d of DEGENS) {
     if (existingHandles.has(d.handle)) { degIdx++; continue; }
@@ -113,18 +120,26 @@ async function main() {
       name: d.name,
       handle: d.handle,
       type: AgentType.DEGEN,
-      balance: d.balance,
+      balance: "0",
+      ethBalance: "0",
       riskProfile: {
         profile: d.profile,
-        positionSizing: PositionSizing.MEDIUM,
-        takeProfit: TakeProfitStrategy.SCALE_OUT,
-        stopLossPct: 30,
-        takeProfitPct: 100,
-        maxPositions: 5,
+        positionSizing: d.sizing,
+        takeProfit: d.takeProfit,
+        stopLossPct: d.profile === RiskProfile.CONSERVATIVE ? 15 :
+                     d.profile === RiskProfile.MODERATE ? 25 :
+                     d.profile === RiskProfile.AGGRESSIVE ? 40 : 60,
+        takeProfitPct: d.profile === RiskProfile.CONSERVATIVE ? 50 :
+                       d.profile === RiskProfile.MODERATE ? 100 :
+                       d.profile === RiskProfile.AGGRESSIVE ? 200 : 500,
+        maxPositions: d.profile === RiskProfile.CONSERVATIVE ? 3 :
+                      d.profile === RiskProfile.MODERATE ? 5 :
+                      d.profile === RiskProfile.AGGRESSIVE ? 8 : 12,
       },
       personality: d.personality,
       nextEvalTick: (degIdx++ % 5) + 1,
     });
+    degenCount++;
   }
 
   // Ensure simulation_state
@@ -133,7 +148,9 @@ async function main() {
     await db.insert(simulationState).values({ id: 1, currentTick: 0n });
   }
 
-  console.log(`seeded ${DEVS.length} devs + ${DEGENS.length} degens`);
+  console.log(`seeded ${devCount} devs + ${degenCount} degens (${DEVS.length - devCount + DEGENS.length - degenCount} already existed)`);
+  console.log("NOTE: Agent wallets are auto-created by the worker on first evaluation.");
+  console.log("NOTE: Fund agent wallets with testnet ETH to activate trading.");
   await pool.end();
 }
 
