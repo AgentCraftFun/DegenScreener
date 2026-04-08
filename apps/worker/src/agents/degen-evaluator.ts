@@ -13,7 +13,9 @@ import {
   buildDegenUserPrompt,
   DegenDecisionSchema,
   type DegenDecisionContext,
+  type TokenTopicContext,
 } from "../ai/prompt-templates/degen-decision.js";
+import type { TrendData } from "../tick.js";
 import { callLLM, MODELS } from "../ai/llm-client.js";
 import {
   checkFallbackRules,
@@ -42,6 +44,7 @@ export interface DegenEvalResult {
 
 export async function evaluateDegenAgent(
   agent: Agent,
+  trendingTopics?: TrendData[],
 ): Promise<DegenEvalResult> {
   // Skip if agent not ready
   const ready = await agentQueries.isAgentReady(agent.id);
@@ -159,6 +162,45 @@ export async function evaluateDegenAgent(
       }),
     ),
   };
+
+  // Add trending data if available
+  if (trendingTopics && trendingTopics.length > 0) {
+    // Build topic-to-tokens mapping
+    const topicTokenMap = new Map<string, string[]>();
+    for (const t of activeTokens) {
+      if (t.topicId) {
+        const existing = topicTokenMap.get(t.topicId) ?? [];
+        existing.push(t.ticker);
+        topicTokenMap.set(t.topicId, existing);
+      }
+    }
+
+    ctx.trendingTopics = trendingTopics.slice(0, 15).map((t) => ({
+      topic: t.topic,
+      category: t.category,
+      tokens: topicTokenMap.get(t.id) ?? [],
+      velocity: t.velocity,
+      sourceCount: t.sourceCount,
+    }));
+
+    // Build portfolio topic momentum
+    const portfolioMomentum: TokenTopicContext[] = [];
+    for (const h of holdingCtx) {
+      const token = await tokenQueries.getTokenById(h.tokenId);
+      if (!token?.topicId) continue;
+      const trend = trendingTopics.find((t) => t.id === token.topicId);
+      if (!trend) continue;
+      portfolioMomentum.push({
+        ticker: h.ticker,
+        topic: trend.topic,
+        velocity: trend.velocity,
+        sourceCountTrend: trend.sourceCount > 10 ? "high" : trend.sourceCount > 3 ? "moderate" : "low",
+      });
+    }
+    if (portfolioMomentum.length > 0) {
+      ctx.portfolioTopicMomentum = portfolioMomentum;
+    }
+  }
 
   const contrarian = isContrarian(agent.id);
   const system = buildDegenSystemPrompt(profile, { contrarian });

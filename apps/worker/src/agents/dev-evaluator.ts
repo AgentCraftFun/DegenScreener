@@ -1,13 +1,15 @@
-import { tokenQueries, agentQueries, schema } from "@degenscreener/db";
+import { tokenQueries, agentQueries, trendingQueries, schema } from "@degenscreener/db";
 import { LaunchStyle, LaunchFrequency } from "@degenscreener/shared";
 import {
   buildDevLaunchPrompt,
   DevLaunchSchema,
+  type TrendingTopic,
 } from "../ai/prompt-templates/dev-decision.js";
 import { callLLM, MODELS } from "../ai/llm-client.js";
 import { trackUsage } from "../ai/cost-tracker.js";
 import { executeIntent, type TradeIntent } from "../tx/intent.js";
 import { rand } from "../util/rng.js";
+import type { TrendData } from "../tick.js";
 
 type Agent = typeof schema.agents.$inferSelect;
 
@@ -25,6 +27,8 @@ const FREQ_TO_PROB: Record<LaunchFrequency, number> = {
 
 export async function evaluateDevAgent(
   agent: Agent,
+  trendingTopics?: TrendData[],
+  breakingNews?: TrendData[],
 ): Promise<DevEvalResult> {
   const result: DevEvalResult = { launched: false, txPending: false };
   const rp = agent.riskProfile as {
@@ -56,12 +60,39 @@ export async function evaluateDevAgent(
   const launchProb = FREQ_TO_PROB[freq];
   if (mine.length < 3 && ethBal > 0.001 && rand() < launchProb) {
     const recentTickers = activeTokens.slice(0, 10).map((t) => t.ticker);
+
+    // Convert TrendData to TrendingTopic for prompt
+    const promptTrends: TrendingTopic[] | undefined = trendingTopics?.map((t) => ({
+      id: t.id,
+      topic: t.topic,
+      category: t.category,
+      memabilityScore: t.memabilityScore,
+      velocity: t.velocity,
+      sourceCount: t.sourceCount,
+      ageMinutes: t.ageMinutes,
+      alreadyLaunched: t.alreadyLaunched,
+      suggestedTickers: t.suggestedTickers,
+    }));
+    const promptBreaking: TrendingTopic[] | undefined = breakingNews?.map((t) => ({
+      id: t.id,
+      topic: t.topic,
+      category: t.category,
+      memabilityScore: t.memabilityScore,
+      velocity: t.velocity,
+      sourceCount: t.sourceCount,
+      ageMinutes: t.ageMinutes,
+      alreadyLaunched: t.alreadyLaunched,
+      suggestedTickers: t.suggestedTickers,
+    }));
+
     const { system, user } = buildDevLaunchPrompt({
       balance: agent.ethBalance,
       activeTokensCount: mine.length,
       launchFrequency: freq,
       launchStyle: rp.launchStyle ?? LaunchStyle.SPICY,
       recentTickers,
+      trendingTopics: promptTrends,
+      breakingNews: promptBreaking,
     });
 
     const res = await callLLM({
@@ -101,7 +132,12 @@ export async function evaluateDevAgent(
         if (intentResult.success) {
           result.launched = true;
           result.txPending = true;
-          // Token won't appear in DB until event indexer processes TokenCreated event
+          // Mark trending topic as launched (if applicable)
+          if (res.parsed.based_on_topic_id) {
+            try {
+              await trendingQueries.markTopicLaunched(res.parsed.based_on_topic_id, agent.id);
+            } catch { /* topic may not exist */ }
+          }
         } else {
           result.error = intentResult.error;
         }

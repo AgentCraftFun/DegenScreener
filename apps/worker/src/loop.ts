@@ -1,6 +1,6 @@
 import { simulationQueries } from "@degenscreener/db";
 import { DEFAULT_TICK_INTERVAL_MS } from "@degenscreener/shared";
-import { runTick, type TickStats } from "./tick.js";
+import { runTick, type TickStats, type TrendData } from "./tick.js";
 import type { Redis } from "ioredis";
 
 export interface LoopOptions {
@@ -50,10 +50,33 @@ export async function runLoop(opts: LoopOptions): Promise<{
     tick += 1n;
     const tickNum = Number(tick);
     try {
+      // Fetch trending data from Redis every 3rd tick (not every tick for efficiency)
+      let trendingTopics: TrendData[] | undefined;
+      let breakingNews: TrendData[] | undefined;
+      if (!simulationMode && opts.redis && tickNum % 3 === 0) {
+        try {
+          const [allRaw, breakingRaw] = await Promise.all([
+            opts.redis.zrevrange("trends:all", 0, 19),
+            opts.redis.zrevrange("trends:breaking", 0, 9),
+          ]);
+          if (allRaw.length > 0) {
+            trendingTopics = allRaw.map((r) => JSON.parse(r) as TrendData);
+          }
+          if (breakingRaw.length > 0) {
+            breakingNews = breakingRaw.map((r) => JSON.parse(r) as TrendData);
+          }
+        } catch (e) {
+          // Aggregator not running or Redis empty — agents fall back to V1 behavior
+          void e;
+        }
+      }
+
       const stats = await runTick(tickNum, {
         useAi: opts.useAi ?? false,
         redis: opts.redis,
         simulationMode,
+        trendingTopics,
+        breakingNews,
       });
       totals.trades += stats.trades;
       totals.launches += stats.launches;

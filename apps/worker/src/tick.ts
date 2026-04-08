@@ -31,11 +31,28 @@ import {
 import { poolQueries } from "@degenscreener/db";
 import { userQueries } from "@degenscreener/db";
 
+export interface TrendData {
+  id: string;
+  topic: string;
+  category: string;
+  memabilityScore: string;
+  velocity: string;
+  sourceCount: number;
+  ageMinutes: number;
+  alreadyLaunched: boolean;
+  launchedTokenId?: string | null;
+  suggestedTickers: string[];
+}
+
 export interface TickContext {
   useAi: boolean;
   redis?: Redis;
   /** If true, use V1 scripted simulation mode (no on-chain txs). Used for fast-forward. */
   simulationMode?: boolean;
+  /** Trending topics from news aggregator Redis store */
+  trendingTopics?: TrendData[];
+  /** Breaking news (< 30 min, high memability) */
+  breakingNews?: TrendData[];
 }
 
 export interface TickStats {
@@ -93,11 +110,11 @@ export async function runTick(
       if (ctx.useAi && !ctx.simulationMode) {
         // V2: On-chain mode — AI decides, intent system submits txs
         if (agent.type === AgentType.DEV) {
-          const r = await evaluateDevAgent(agent);
+          const r = await evaluateDevAgent(agent, ctx.trendingTopics, ctx.breakingNews);
           if (r.launched) stats.launches++;
           if (r.txPending) stats.txSubmitted++;
         } else {
-          const r = await evaluateDegenAgent(agent);
+          const r = await evaluateDegenAgent(agent, ctx.trendingTopics);
           if (r.executed && (r.action === "BUY" || r.action === "SELL")) {
             stats.trades++;
           }
