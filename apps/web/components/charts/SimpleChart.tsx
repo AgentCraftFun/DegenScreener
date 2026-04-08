@@ -10,7 +10,12 @@ interface Candle {
   volume: string;
 }
 
-export function SimpleChart({ candles }: { candles: Candle[] }) {
+interface Props {
+  candles: Candle[];
+  graduatedAt?: string; // ISO timestamp of graduation
+}
+
+export function SimpleChart({ candles, graduatedAt }: Props) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -165,7 +170,43 @@ export function SimpleChart({ candles }: { candles: Candle[] }) {
     ctx.textAlign = "left";
     ctx.fillText("Volume", padding + 4 * dpr, volTop + 12 * dpr);
 
-  }, [candles]);
+    // Graduation marker
+    if (graduatedAt) {
+      const gradTime = new Date(graduatedAt).getTime();
+      const candleTimes = candles.map((c) => new Date(c.timestamp).getTime());
+      // Find the candle index closest to graduation
+      let gradIdx = -1;
+      for (let i = 0; i < candleTimes.length; i++) {
+        if (candleTimes[i]! >= gradTime) {
+          gradIdx = i;
+          break;
+        }
+      }
+      if (gradIdx >= 0) {
+        const gx = padding + gradIdx * cw + cw / 2;
+        // Vertical line
+        ctx.strokeStyle = "rgba(0, 255, 65, 0.6)";
+        ctx.lineWidth = 2 * dpr;
+        ctx.setLineDash([6 * dpr, 4 * dpr]);
+        ctx.beginPath();
+        ctx.moveTo(gx, padding);
+        ctx.lineTo(gx, volTop + volH);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Label
+        ctx.fillStyle = "rgba(0, 255, 65, 0.9)";
+        ctx.font = `bold ${10 * dpr}px 'Share Tech Mono', monospace`;
+        ctx.textAlign = "center";
+        ctx.shadowColor = "rgba(0, 255, 65, 0.5)";
+        ctx.shadowBlur = 8 * dpr;
+        ctx.fillText("\uD83C\uDF93 Graduated", gx, padding - 6 * dpr);
+        ctx.shadowColor = "transparent";
+        ctx.shadowBlur = 0;
+      }
+    }
+
+  }, [candles, graduatedAt]);
 
   return (
     <canvas
