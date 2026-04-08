@@ -19,3 +19,13 @@ export {
   refreshAllBalances,
   isAgentBroke,
 } from "./wallet-manager.js";
+export {
+  NonceManager,
+  signAndSend,
+  estimateGasWithBuffer,
+  estimateTxCost,
+  resetNonce,
+  resetAllNonces,
+  type SignedTransaction,
+  type SigningRequest,
+} from "./signing-service.js";
