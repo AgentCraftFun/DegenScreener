@@ -81,3 +81,40 @@ export async function updateAgentWallet(id: string, walletAddress: string) {
     .returning();
   return row!;
 }
+
+export async function setAgentTxPending(agentId: string, pendingTxId: string) {
+  const [row] = await db
+    .update(agents)
+    .set({ txState: "TX_PENDING", lastTxId: pendingTxId })
+    .where(eq(agents.id, agentId))
+    .returning();
+  return row!;
+}
+
+export async function setAgentIdle(agentId: string) {
+  const [row] = await db
+    .update(agents)
+    .set({ txState: "IDLE", lastTxId: null })
+    .where(eq(agents.id, agentId))
+    .returning();
+  return row!;
+}
+
+export async function setAgentCooldown(agentId: string, until: Date) {
+  const [row] = await db
+    .update(agents)
+    .set({ txState: "COOLDOWN", cooldownUntil: until })
+    .where(eq(agents.id, agentId))
+    .returning();
+  return row!;
+}
+
+export async function isAgentReady(agentId: string): Promise<boolean> {
+  const [row] = await db.select().from(agents).where(eq(agents.id, agentId));
+  if (!row) return false;
+  if (row.txState === "IDLE") return true;
+  if (row.txState === "COOLDOWN" && row.cooldownUntil) {
+    return new Date() > row.cooldownUntil;
+  }
+  return false;
+}

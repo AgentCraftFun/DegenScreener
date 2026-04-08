@@ -77,3 +77,9 @@ export enum LaunchFrequency {
   MEDIUM = "MEDIUM",
   FAST = "FAST",
 }
+
+export enum AgentTxState {
+  IDLE = "IDLE",
+  TX_PENDING = "TX_PENDING",
+  COOLDOWN = "COOLDOWN",
+}

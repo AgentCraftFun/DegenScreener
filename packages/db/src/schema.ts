@@ -92,6 +92,9 @@ export const agents = pgTable(
     // V2 columns
     walletAddress: varchar("wallet_address", { length: 128 }),
     ethBalance: numeric("eth_balance", MONEY).notNull().default("0"),
+    txState: varchar("tx_state", { length: 32 }).notNull().default("IDLE"),
+    lastTxId: uuid("last_tx_id"),
+    cooldownUntil: timestamp("cooldown_until", { withTimezone: true }),
   },
   (t) => ({
     handleIdx: uniqueIndex("agents_handle_idx").on(t.handle),
