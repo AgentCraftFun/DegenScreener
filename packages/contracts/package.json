@@ -1,0 +1,14 @@
+{
+  "name": "@degenscreener/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test -vvv",
+    "test:gas": "forge test -vvv --gas-report",
+    "deploy:local": "forge script script/Deploy.s.sol --rpc-url local --broadcast",
+    "deploy:sepolia": "forge script script/Deploy.s.sol --rpc-url base_sepolia --broadcast --verify",
+    "fmt": "forge fmt",
+    "snapshot": "forge snapshot"
+  }
+}
