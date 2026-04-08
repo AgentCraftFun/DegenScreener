@@ -9,11 +9,13 @@ export interface HoldingCtx {
   avgEntryPrice: string;
   currentPrice: string;
   tokenStatus: "ACTIVE" | "RUGGED" | "DEAD";
+  phase?: string; // PRE_BOND | GRADUATED
 }
 
 export interface AgentCtx {
   id: string;
   balance: string;
+  ethBalance?: string;
   riskProfile: { profile?: RiskProfile } & Record<string, unknown>;
 }
 
@@ -47,11 +49,24 @@ function stopLossPctFor(profile?: RiskProfile): number | null {
   }
 }
 
+const MIN_GAS_ETH = 0.0005; // 0.0005 ETH — minimum to cover gas
+
 export function checkFallbackRules(
   agent: AgentCtx,
   holdings: HoldingCtx[],
 ): FallbackResult {
-  // Rule 1: force sell rugged tokens
+  // Rule 0: GAS_CHECK — if agent ETH balance < min gas, force HOLD
+  const ethBal = agent.ethBalance
+    ? parseFloat(agent.ethBalance)
+    : parseFloat(agent.balance);
+  if (ethBal < MIN_GAS_ETH) {
+    return {
+      triggered: true,
+      action: { kind: "HOLD", reason: "Insufficient ETH for gas — needs top-up" },
+    };
+  }
+
+  // Rule 1: force sell rugged tokens (V1 legacy, could still happen post-graduation on Uniswap)
   for (const h of holdings) {
     if (h.tokenStatus === "RUGGED" && new Decimal(h.quantity).gt(0)) {
       return {
@@ -107,11 +122,32 @@ export function checkFallbackRules(
     }
   }
 
-  // Rule 4: insufficient balance → HOLD
-  if (new Decimal(agent.balance).lt("0.1")) {
+  // Rule 4: GRADUATION_AWARENESS — if a held token just graduated,
+  // consider selling some (post-graduation trades go through Uniswap with different gas)
+  for (const h of holdings) {
+    if (h.phase === "GRADUATED") {
+      const entry = new Decimal(h.avgEntryPrice);
+      if (entry.lte(0)) continue;
+      const mult = new Decimal(h.currentPrice).div(entry);
+      // If graduated and in profit, take some off the table
+      if (mult.gte(2)) {
+        return {
+          triggered: true,
+          action: {
+            kind: "SELL_HALF",
+            tokenId: h.tokenId,
+            reason: `Token graduated at ${mult.toFixed(2)}x — taking partial profit`,
+          },
+        };
+      }
+    }
+  }
+
+  // Rule 5: insufficient ETH balance → HOLD (threshold in ETH)
+  if (ethBal < 0.001) {
     return {
       triggered: true,
-      action: { kind: "HOLD", reason: "Insufficient balance" },
+      action: { kind: "HOLD", reason: "Insufficient ETH balance for trading" },
     };
   }
 

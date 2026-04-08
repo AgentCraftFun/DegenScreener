@@ -3,8 +3,8 @@ import {
   holdingQueries,
   tokenQueries,
   tweetQueries,
-  poolQueries,
   tradeQueries,
+  agentQueries,
   schema,
 } from "@degenscreener/db";
 import { RiskProfile, Personality } from "@degenscreener/shared";
@@ -20,14 +20,14 @@ import {
   type HoldingCtx,
 } from "../ai/fallback-rules.js";
 import { isWithinBudget, trackUsage, estimateCost } from "../ai/cost-tracker.js";
-import { executeBuyTrade, executeSellTrade } from "../pool/execute-trade.js";
+import { executeIntent, type TradeIntent } from "../tx/intent.js";
 import { rand } from "../util/rng.js";
 import { generateTweet } from "../ai/tweet-generator.js";
+import { getCurveState, getPrice } from "@degenscreener/blockchain";
 
 type Agent = typeof schema.agents.$inferSelect;
 
 function isContrarian(agentId: string): boolean {
-  // Hash last 2 hex chars → mod 100 < 12 (~12% contrarian)
   const tail = agentId.replace(/-/g, "").slice(-4);
   const n = parseInt(tail, 16);
   return n % 100 < 12;
@@ -36,24 +36,47 @@ function isContrarian(agentId: string): boolean {
 export interface DegenEvalResult {
   action: "BUY" | "SELL" | "HOLD";
   executed: boolean;
+  txPending?: boolean;
+  error?: string;
 }
 
 export async function evaluateDegenAgent(
   agent: Agent,
 ): Promise<DegenEvalResult> {
+  // Skip if agent not ready
+  const ready = await agentQueries.isAgentReady(agent.id);
+  if (!ready) {
+    return { action: "HOLD", executed: false };
+  }
+
+  // Gas check — minimum ETH for any operation
+  const ethBal = parseFloat(agent.ethBalance);
+  if (ethBal < 0.0005) {
+    return { action: "HOLD", executed: false, error: "Insufficient ETH for gas" };
+  }
+
   const holdings = await holdingQueries.getHoldingsByAgent(agent.id);
   const activeTokens = await tokenQueries.getActiveTokens();
 
-  // Build price map from pools for holdings & active tokens
+  // Build holding context with on-chain prices where possible
   const holdingCtx: HoldingCtx[] = [];
   for (const h of holdings) {
     const token = await tokenQueries.getTokenById(h.tokenId);
     if (!token) continue;
-    const pool = await poolQueries.getPoolByTokenId(h.tokenId);
-    const price =
-      pool && new Decimal(pool.tokenReserve).gt(0)
-        ? new Decimal(pool.dscreenReserve).div(pool.tokenReserve)
-        : new Decimal(0);
+
+    let price = new Decimal(0);
+    const phase = token.phase ?? "PRE_BOND";
+
+    if (phase === "PRE_BOND" && token.contractAddress) {
+      try {
+        const onChainPrice = await getPrice(token.contractAddress as `0x${string}`);
+        // Price from contract is in wei per token, convert to ETH
+        price = new Decimal(onChainPrice.toString()).div(new Decimal("1e18"));
+      } catch {
+        // Fallback to 0
+      }
+    }
+
     holdingCtx.push({
       tokenId: h.tokenId,
       ticker: token.ticker,
@@ -61,6 +84,7 @@ export async function evaluateDegenAgent(
       avgEntryPrice: h.avgEntryPrice,
       currentPrice: price.toFixed(18),
       tokenStatus: token.status,
+      phase,
     });
   }
 
@@ -69,14 +93,14 @@ export async function evaluateDegenAgent(
 
   // Fallback rules first
   const fb = checkFallbackRules(
-    { id: agent.id, balance: agent.balance, riskProfile },
+    { id: agent.id, balance: agent.ethBalance, ethBalance: agent.ethBalance, riskProfile },
     holdingCtx,
   );
   if (fb.triggered && fb.action) {
     return executeFallback(agent, fb.action, holdingCtx);
   }
 
-  // Budget check (estimate ~500 in + 200 out for typical call)
+  // Budget check
   const estCost = estimateCost(500, 200, MODELS.decision);
   if (!(await isWithinBudget(agent.id, estCost))) {
     return { action: "HOLD", executed: false };
@@ -84,7 +108,8 @@ export async function evaluateDegenAgent(
 
   // Build context for LLM
   const ctx: DegenDecisionContext = {
-    balance: agent.balance,
+    balance: agent.ethBalance,
+    ethBalance: agent.ethBalance,
     holdings: holdingCtx.map((h) => {
       const entry = new Decimal(h.avgEntryPrice);
       const pnlPct = entry.gt(0)
@@ -96,22 +121,27 @@ export async function evaluateDegenAgent(
         entryPrice: h.avgEntryPrice,
         currentPrice: h.currentPrice,
         pnlPct,
+        phase: h.phase,
       };
     }),
     activeTokens: await Promise.all(
       activeTokens.slice(0, 20).map(async (t) => {
-        const pool = await poolQueries.getPoolByTokenId(t.id);
-        const price =
-          pool && new Decimal(pool.tokenReserve).gt(0)
-            ? new Decimal(pool.dscreenReserve).div(pool.tokenReserve)
-            : new Decimal(0);
+        let price = new Decimal(0);
+        const phase = t.phase ?? "PRE_BOND";
+        if (phase === "PRE_BOND" && t.contractAddress) {
+          try {
+            const p = await getPrice(t.contractAddress as `0x${string}`);
+            price = new Decimal(p.toString()).div(new Decimal("1e18"));
+          } catch { /* */ }
+        }
         const mc = price.mul(t.totalSupply);
         return {
           ticker: t.ticker,
           price: price.toFixed(18),
           marketCap: mc.toFixed(6),
-          volume24h: pool?.totalVolume ?? "0",
+          volume24h: "0",
           change24hPct: "0",
+          phase,
         };
       }),
     ),
@@ -148,7 +178,6 @@ export async function evaluateDegenAgent(
 
   const dec = res.parsed;
   if (dec.action === "HOLD") {
-    // Occasional organic commentary
     if (rand() < 0.1) {
       await maybeTweet(agent, "HOLD");
     }
@@ -157,39 +186,54 @@ export async function evaluateDegenAgent(
 
   if (dec.action === "BUY" && dec.token_ticker && dec.amount) {
     const token = activeTokens.find((t) => t.ticker === dec.token_ticker);
-    if (!token) return { action: "HOLD", executed: false };
+    if (!token || !token.contractAddress) return { action: "HOLD", executed: false };
+
+    // Amount is in ETH now
     const amt = new Decimal(dec.amount);
-    const bal = new Decimal(agent.balance);
-    const capped = Decimal.min(amt, bal.mul("0.5"));
+    const bal = new Decimal(agent.ethBalance);
+    const capped = Decimal.min(amt, bal.mul("0.4")); // Max 40% of ETH balance
     if (capped.lte(0)) return { action: "HOLD", executed: false };
-    const buy = await executeBuyTrade(
-      agent.id,
-      token.id,
-      capped.toFixed(18),
-    );
-    if (buy && rand() < 0.3) {
-      await maybeTweet(agent, "BUY", token.ticker);
-    }
-    return { action: "BUY", executed: !!buy };
+
+    const intent: TradeIntent = {
+      agentId: agent.id,
+      type: "BUY",
+      tokenAddress: token.contractAddress as `0x${string}`,
+      ethAmount: BigInt(capped.mul("1e18").toFixed(0)),
+    };
+
+    const intentResult = await executeIntent(intent);
+    return {
+      action: "BUY",
+      executed: intentResult.success,
+      txPending: intentResult.success,
+      error: intentResult.error,
+    };
   }
 
   if (dec.action === "SELL" && dec.token_ticker && dec.amount) {
     const token = activeTokens.find((t) => t.ticker === dec.token_ticker);
-    if (!token) return { action: "HOLD", executed: false };
+    if (!token || !token.contractAddress) return { action: "HOLD", executed: false };
     const holding = holdings.find((h) => h.tokenId === token.id);
     if (!holding) return { action: "HOLD", executed: false };
+
     const pct = new Decimal(dec.amount).div(100);
     const qty = new Decimal(holding.quantity).mul(pct);
     if (qty.lte(0)) return { action: "HOLD", executed: false };
-    const sell = await executeSellTrade(
-      agent.id,
-      token.id,
-      qty.toFixed(18),
-    );
-    if (sell && rand() < 0.3) {
-      await maybeTweet(agent, "SELL", token.ticker);
-    }
-    return { action: "SELL", executed: !!sell };
+
+    const intent: TradeIntent = {
+      agentId: agent.id,
+      type: "SELL",
+      tokenAddress: token.contractAddress as `0x${string}`,
+      tokenAmount: BigInt(qty.mul("1e18").toFixed(0)),
+    };
+
+    const intentResult = await executeIntent(intent);
+    return {
+      action: "SELL",
+      executed: intentResult.success,
+      txPending: intentResult.success,
+      error: intentResult.error,
+    };
   }
 
   return { action: "HOLD", executed: false };
@@ -201,18 +245,36 @@ async function executeFallback(
   holdings: HoldingCtx[],
 ): Promise<DegenEvalResult> {
   if (action.kind === "HOLD") return { action: "HOLD", executed: false };
+
   const h = holdings.find((x) => x.tokenId === action.tokenId);
   if (!h) return { action: "HOLD", executed: false };
+
+  const token = await tokenQueries.getTokenById(action.tokenId);
+  if (!token?.contractAddress) return { action: "HOLD", executed: false };
+
   const qty = new Decimal(h.quantity);
   const sellQty = action.kind === "SELL_ALL" ? qty : qty.mul("0.5");
   if (sellQty.lte(0)) return { action: "HOLD", executed: false };
-  const r = await executeSellTrade(agent.id, action.tokenId, sellQty.toFixed(18));
-  return { action: "SELL", executed: !!r };
+
+  const intent: TradeIntent = {
+    agentId: agent.id,
+    type: "SELL",
+    tokenAddress: token.contractAddress as `0x${string}`,
+    tokenAmount: BigInt(sellQty.mul("1e18").toFixed(0)),
+  };
+
+  const intentResult = await executeIntent(intent);
+  return {
+    action: "SELL",
+    executed: intentResult.success,
+    txPending: intentResult.success,
+    error: intentResult.error,
+  };
 }
 
 async function maybeTweet(
   agent: Agent,
-  trigger: "BUY" | "SELL" | "HOLD" | "LAUNCH" | "RUG",
+  trigger: "BUY" | "SELL" | "HOLD" | "LAUNCH",
   ticker?: string,
 ) {
   try {
@@ -222,7 +284,6 @@ async function maybeTweet(
       ticker,
     });
   } catch (e) {
-    // swallow
     void e;
   }
 }

@@ -87,10 +87,20 @@ test("Full Degen has no stop-loss", () => {
   assert.equal(r.triggered, false);
 });
 
-test("low balance forces HOLD", () => {
+test("low ETH balance forces HOLD (gas check)", () => {
   seedRng(5);
   const r = checkFallbackRules(
-    { id: "a", balance: "0.05", riskProfile: { profile: RiskProfile.MODERATE } },
+    { id: "a", balance: "0.0001", ethBalance: "0.0001", riskProfile: { profile: RiskProfile.MODERATE } },
+    [],
+  );
+  assert.equal(r.triggered, true);
+  assert.equal(r.action?.kind, "HOLD");
+});
+
+test("low ETH balance forces HOLD (balance threshold)", () => {
+  seedRng(5);
+  const r = checkFallbackRules(
+    { id: "a", balance: "0.0008", ethBalance: "0.0008", riskProfile: { profile: RiskProfile.MODERATE } },
     [],
   );
   assert.equal(r.triggered, true);
