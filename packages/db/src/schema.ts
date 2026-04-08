@@ -89,6 +89,9 @@ export const agents = pgTable(
       .defaultNow(),
     avatarUrl: varchar("avatar_url", { length: 512 }),
     nextEvalTick: integer("next_eval_tick").notNull().default(0),
+    // V2 columns
+    walletAddress: varchar("wallet_address", { length: 128 }),
+    ethBalance: numeric("eth_balance", MONEY).notNull().default("0"),
   },
   (t) => ({
     handleIdx: uniqueIndex("agents_handle_idx").on(t.handle),
@@ -112,9 +115,18 @@ export const tokens = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // V2 columns
+    contractAddress: varchar("contract_address", { length: 128 }),
+    phase: varchar("phase", { length: 32 }).notNull().default("PRE_BOND"),
+    graduationTxHash: varchar("graduation_tx_hash", { length: 128 }),
+    uniswapPairAddress: varchar("uniswap_pair_address", { length: 128 }),
+    graduatedAt: timestamp("graduated_at", { withTimezone: true }),
+    initialLiquidityEth: numeric("initial_liquidity_eth", MONEY),
+    topicId: uuid("topic_id"),
   },
   (t) => ({
     tickerIdx: uniqueIndex("tokens_ticker_idx").on(t.ticker),
+    contractAddrIdx: index("tokens_contract_address_idx").on(t.contractAddress),
   }),
 );
 
@@ -152,11 +164,18 @@ export const trades = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // V2 columns
+    txHash: varchar("tx_hash", { length: 128 }),
+    source: varchar("source", { length: 32 }).notNull().default("SIMULATION"),
+    gasUsed: numeric("gas_used", { precision: 18, scale: 0 }),
+    gasCostEth: numeric("gas_cost_eth", MONEY),
+    blockNumber: bigint("block_number", { mode: "bigint" }),
   },
   (t) => ({
     agentIdx: index("trades_agent_idx").on(t.agentId),
     tokenIdx: index("trades_token_idx").on(t.tokenId),
     createdIdx: index("trades_created_idx").on(t.createdAt),
+    txHashIdx: index("trades_tx_hash_idx").on(t.txHash),
   }),
 );
 
@@ -300,6 +319,114 @@ export const simulationState = pgTable("simulation_state", {
     .notNull()
     .defaultNow(),
 });
+
+// === V2 TABLES ===
+
+// agent_wallets
+export const agentWallets = pgTable(
+  "agent_wallets",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    agentId: uuid("agent_id")
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    address: varchar("address", { length: 128 }).notNull(),
+    encryptedPrivateKey: text("encrypted_private_key").notNull(),
+    ethBalance: numeric("eth_balance", MONEY).notNull().default("0"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    agentIdx: uniqueIndex("agent_wallets_agent_id_idx").on(t.agentId),
+    addressIdx: uniqueIndex("agent_wallets_address_idx").on(t.address),
+  }),
+);
+
+// trending_topics
+export const trendingTopics = pgTable(
+  "trending_topics",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    topic: text("topic").notNull(),
+    category: varchar("category", { length: 64 }).notNull(),
+    memabilityScore: numeric("memability_score", {
+      precision: 3,
+      scale: 1,
+    }).notNull(),
+    velocity: varchar("velocity", { length: 32 }).notNull(),
+    sourceCount: integer("source_count").notNull().default(1),
+    ageMinutes: integer("age_minutes").notNull().default(0),
+    alreadyLaunched: boolean("already_launched").notNull().default(false),
+    launchedTokenId: uuid("launched_token_id").references(() => tokens.id, {
+      onDelete: "set null",
+    }),
+    suggestedTickers: jsonb("suggested_tickers").notNull().default([]),
+    firstSeen: timestamp("first_seen", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    lastSeen: timestamp("last_seen", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    isStale: boolean("is_stale").notNull().default(false),
+  },
+  (t) => ({
+    topicIdx: index("trending_topics_topic_idx").on(t.topic),
+    categoryIdx: index("trending_topics_category_idx").on(t.category),
+  }),
+);
+
+// news_items
+export const newsItems = pgTable(
+  "news_items",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    headline: text("headline").notNull(),
+    source: varchar("source", { length: 128 }).notNull(),
+    url: text("url"),
+    category: varchar("category", { length: 64 }),
+    sentiment: numeric("sentiment", { precision: 3, scale: 2 }).default("0"),
+    topicId: uuid("topic_id").references(() => trendingTopics.id, {
+      onDelete: "set null",
+    }),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    topicIdx: index("news_items_topic_idx").on(t.topicId),
+    fetchedIdx: index("news_items_fetched_idx").on(t.fetchedAt),
+  }),
+);
+
+// pending_transactions
+export const pendingTransactions = pgTable(
+  "pending_transactions",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    agentId: uuid("agent_id")
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    type: varchar("type", { length: 32 }).notNull(),
+    txHash: varchar("tx_hash", { length: 128 }),
+    status: varchar("status", { length: 32 }).notNull().default("QUEUED"),
+    txData: jsonb("tx_data").notNull(),
+    gasUsed: numeric("gas_used", { precision: 18, scale: 0 }),
+    gasCostEth: numeric("gas_cost_eth", MONEY),
+    errorMessage: text("error_message"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    submittedAt: timestamp("submitted_at", { withTimezone: true }),
+    confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+    blockNumber: bigint("block_number", { mode: "bigint" }),
+  },
+  (t) => ({
+    agentIdx: index("pending_tx_agent_idx").on(t.agentId),
+    statusIdx: index("pending_tx_status_idx").on(t.status),
+    txHashIdx: index("pending_tx_hash_idx").on(t.txHash),
+  }),
+);
 
 // agent_cost_tracking
 export const agentCostTracking = pgTable(

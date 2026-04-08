@@ -12,3 +12,8 @@ export * as candleQueries from "./queries/candles.js";
 export * as transactionQueries from "./queries/transactions.js";
 export * as notificationQueries from "./queries/notifications.js";
 export * as simulationQueries from "./queries/simulation.js";
+// V2 queries
+export * as walletQueries from "./queries/agent-wallets.js";
+export * as pendingTxQueries from "./queries/pending-transactions.js";
+export * as trendingQueries from "./queries/trending-topics.js";
+export * as newsQueries from "./queries/news-items.js";
