@@ -12,6 +12,10 @@
   "dependencies": {
     "@degenscreener/shared": "workspace:*",
     "@degenscreener/db": "workspace:*",
+    "@degenscreener/pool-engine": "workspace:*",
+    "viem": "^2.22.0",
+    "wagmi": "^2.14.0",
+    "@tanstack/react-query": "^5.62.0",
     "next": "^14.2.18",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

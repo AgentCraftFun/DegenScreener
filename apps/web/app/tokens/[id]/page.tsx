@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { apiGet, useFetch } from "../../../hooks/useApi";
 import { SimpleChart } from "../../../components/charts/SimpleChart";
+import { BondingCurveTrade } from "../../../components/trading/BondingCurveTrade";
+import { GraduationProgress } from "../../../components/tokens/GraduationProgress";
 import { formatPrice, formatNumber, formatPct, formatRelative } from "../../../lib/format";
 import { useWs } from "../../../providers/WebSocketProvider";
 
@@ -53,6 +55,9 @@ export default function TokenPage({ params }: { params: { id: string } }) {
         totalSupply: string;
         volume24h?: string;
         change24hPct?: string;
+        contractAddress?: string;
+        phase?: string;
+        uniswapPairAddress?: string;
       }
     | undefined;
   const creator = tokenData?.creator as { id: string; name: string; handle: string } | null;
@@ -86,7 +91,7 @@ export default function TokenPage({ params }: { params: { id: string } }) {
           <div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-accent-green text-glow-green">{token.ticker}</span>
-              <span className="text-text-muted text-[12px]">/ DSCREEN</span>
+              <span className="text-text-muted text-[12px]">/ {token.contractAddress ? "ETH" : "DSCREEN"}</span>
               <span
                 className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
                   token.status === "ACTIVE"
@@ -213,17 +218,30 @@ export default function TokenPage({ params }: { params: { id: string } }) {
           )}
         </div>
 
-        {/* Actions */}
-        <div className="p-4">
-          <div className="grid grid-cols-2 gap-2">
-            <button className="py-2 rounded text-[12px] font-semibold bg-accent-green/10 text-accent-green hover:bg-accent-green/20 transition-colors border border-accent-green/20 hover:shadow-glow-green">
-              Buy
-            </button>
-            <button className="py-2 rounded text-[12px] font-semibold bg-accent-red/10 text-accent-red hover:bg-accent-red/20 transition-colors border border-accent-red/20 hover:shadow-glow-red">
-              Sell
-            </button>
+        {/* Graduation Progress */}
+        {token.contractAddress && (
+          <GraduationProgress
+            tokenAddress={token.contractAddress as `0x${string}`}
+            bondingCurveAddress={(process.env.NEXT_PUBLIC_BONDING_CURVE_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`}
+            phase={token.phase ?? "PRE_BOND"}
+          />
+        )}
+
+        {/* Trading Panel */}
+        {token.contractAddress ? (
+          <BondingCurveTrade
+            tokenAddress={token.contractAddress as `0x${string}`}
+            bondingCurveAddress={(process.env.NEXT_PUBLIC_BONDING_CURVE_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`}
+            phase={token.phase ?? "PRE_BOND"}
+            uniswapPairAddress={token.uniswapPairAddress}
+          />
+        ) : (
+          <div className="p-4 border-t border-border-primary">
+            <div className="text-[11px] text-text-muted text-center py-2">
+              V1 simulation token — on-chain trading not available
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
