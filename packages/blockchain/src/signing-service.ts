@@ -157,8 +157,67 @@ export interface SigningRequest {
   data?: `0x${string}`;
 }
 
+// ---------------------------------------------------------------------------
+// Daily Gas Cap — per agent, resets at midnight UTC
+// ---------------------------------------------------------------------------
+
+const DAILY_GAS_CAP_ETH = 0.05; // max 0.05 ETH gas spend per agent per day
+
+class DailyGasTracker {
+  private spending = new Map<string, { date: string; totalWei: bigint }>();
+
+  private todayKey(): string {
+    return new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
+  }
+
+  getSpent(agentId: string): bigint {
+    const entry = this.spending.get(agentId);
+    if (!entry || entry.date !== this.todayKey()) return 0n;
+    return entry.totalWei;
+  }
+
+  check(agentId: string, estimatedGasWei: bigint): boolean {
+    const spent = this.getSpent(agentId);
+    const capWei = BigInt(Math.floor(DAILY_GAS_CAP_ETH * 1e18));
+    return spent + estimatedGasWei <= capWei;
+  }
+
+  record(agentId: string, gasWei: bigint): void {
+    const today = this.todayKey();
+    const entry = this.spending.get(agentId);
+    if (!entry || entry.date !== today) {
+      this.spending.set(agentId, { date: today, totalWei: gasWei });
+    } else {
+      entry.totalWei += gasWei;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Audit Logger — logs every signing request (never logs private keys)
+// ---------------------------------------------------------------------------
+
+interface AuditEntry {
+  timestamp: string;
+  agentId: string;
+  to: string;
+  value: string;
+  action: "SUBMITTED" | "FAILED" | "RATE_LIMITED" | "GAS_CAP_EXCEEDED";
+  txHash?: string;
+  nonce?: number;
+  gasLimit?: string;
+  estimatedGasCost?: string;
+  error?: string;
+}
+
+function auditLog(entry: AuditEntry): void {
+  // Structured JSON log — never includes private keys
+  console.log(`[audit:signing] ${JSON.stringify(entry)}`);
+}
+
 const nonceManager = new NonceManager();
 const rateLimiter = new RateLimiter();
+const dailyGasTracker = new DailyGasTracker();
 
 const RPC_URL =
   process.env.BASE_RPC_URL ??
@@ -166,13 +225,21 @@ const RPC_URL =
 
 /**
  * Sign and send a transaction for an agent.
- * Handles nonce management, gas estimation, and rate limiting.
+ * Handles nonce management, gas estimation, rate limiting, daily gas cap, and audit logging.
  */
 export async function signAndSend(
   req: SigningRequest,
 ): Promise<SignedTransaction> {
+  const auditBase = {
+    timestamp: new Date().toISOString(),
+    agentId: req.agentId,
+    to: req.to,
+    value: (req.value ?? 0n).toString(),
+  };
+
   // Rate limit check
   if (!rateLimiter.check(req.agentId)) {
+    auditLog({ ...auditBase, action: "RATE_LIMITED" });
     throw new Error(
       `Rate limit exceeded for agent ${req.agentId}: max ${MAX_SIGS_PER_WINDOW} transactions per minute`,
     );
@@ -204,6 +271,19 @@ export async function signAndSend(
     const maxFeePerGas = feeData.maxFeePerGas ?? 1_000_000_000n;
     const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas ?? 100_000_000n;
 
+    // Daily gas cap check
+    const estimatedGasCost = gasLimit * maxFeePerGas;
+    if (!dailyGasTracker.check(req.agentId, estimatedGasCost)) {
+      auditLog({
+        ...auditBase,
+        action: "GAS_CAP_EXCEEDED",
+        estimatedGasCost: formatEther(estimatedGasCost),
+      });
+      throw new Error(
+        `Daily gas cap exceeded for agent ${req.agentId}: max ${DAILY_GAS_CAP_ETH} ETH/day`,
+      );
+    }
+
     // Send transaction
     const hash = await walletClient.sendTransaction({
       to: req.to,
@@ -215,8 +295,18 @@ export async function signAndSend(
       maxPriorityFeePerGas,
     } as any);
 
-    // Record rate limit
+    // Record rate limit and gas spend
     rateLimiter.record(req.agentId);
+    dailyGasTracker.record(req.agentId, estimatedGasCost);
+
+    auditLog({
+      ...auditBase,
+      action: "SUBMITTED",
+      txHash: hash,
+      nonce,
+      gasLimit: gasLimit.toString(),
+      estimatedGasCost: formatEther(estimatedGasCost),
+    });
 
     return {
       hash,
@@ -232,6 +322,15 @@ export async function signAndSend(
     if (msg.includes("nonce") && msg.includes("too low")) {
       nonceManager.reset(account.address);
     }
+
+    // Audit log the failure (sanitize error to avoid leaking sensitive data)
+    const safeError = msg.replace(/0x[a-fA-F0-9]{64}/g, "0x[REDACTED]");
+    auditLog({
+      ...auditBase,
+      action: "FAILED",
+      error: safeError.slice(0, 200),
+    });
+
     throw error;
   } finally {
     release();
@@ -269,4 +368,4 @@ export function resetAllNonces(): void {
   nonceManager.resetAll();
 }
 
-export { nonceManager, rateLimiter };
+export { nonceManager, rateLimiter, dailyGasTracker };

@@ -44,11 +44,30 @@ export interface IntentResult {
 }
 
 // ---------------------------------------------------------------------------
-// Gas safety check: gas can't exceed 10% of trade value
+// Safety checks
 // ---------------------------------------------------------------------------
 
 const MIN_ETH_FOR_GAS = 500_000_000_000_000n; // 0.0005 ETH
 
+/** Maximum single trade size: 50% of agent's ETH balance */
+const MAX_TRADE_SIZE_PCT = 50n; // percent
+
+function checkMaxTradeSize(
+  ethAmount: bigint,
+  balance: bigint,
+): { safe: boolean; reason?: string } {
+  const maxAllowed = (balance * MAX_TRADE_SIZE_PCT) / 100n;
+  if (ethAmount > maxAllowed) {
+    const pct = balance > 0n ? Number((ethAmount * 10000n) / balance) / 100 : 100;
+    return {
+      safe: false,
+      reason: `Trade size (${pct.toFixed(1)}% of balance) exceeds max ${MAX_TRADE_SIZE_PCT}% per trade`,
+    };
+  }
+  return { safe: true };
+}
+
+/** Gas cost can't exceed 10% of trade value */
 async function checkGasSafety(
   txValue: bigint,
   txRequest: { to: `0x${string}`; data: `0x${string}`; value: bigint },
@@ -135,6 +154,13 @@ async function executeCreateToken(
   }
 
   const deployFee = await getDeployFee();
+
+  // Max trade size check: deploy fee can't exceed 50% of balance
+  const sizeCheck = checkMaxTradeSize(deployFee, balance);
+  if (!sizeCheck.safe) {
+    return { success: false, error: sizeCheck.reason };
+  }
+
   if (balance < deployFee + MIN_ETH_FOR_GAS) {
     return { success: false, error: `Insufficient ETH: need ${deployFee} + gas` };
   }
@@ -161,6 +187,12 @@ async function executeBuy(
 ): Promise<IntentResult> {
   if (!intent.tokenAddress || !intent.ethAmount) {
     return { success: false, error: "BUY requires tokenAddress and ethAmount" };
+  }
+
+  // Max trade size check: no single trade > 50% of balance
+  const sizeCheck = checkMaxTradeSize(intent.ethAmount, balance);
+  if (!sizeCheck.safe) {
+    return { success: false, error: sizeCheck.reason };
   }
 
   if (balance < intent.ethAmount + MIN_ETH_FOR_GAS) {

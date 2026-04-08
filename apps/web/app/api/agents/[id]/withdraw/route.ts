@@ -4,7 +4,7 @@ import { Decimal } from "decimal.js";
 import { eq, sql } from "drizzle-orm";
 import { db, schema } from "@degenscreener/db";
 import { MIN_WITHDRAWAL } from "@degenscreener/shared";
-import { requireAuth, parseBody } from "../../../../../lib/api";
+import { requireAuth, parseBody, checkRateLimit } from "../../../../../lib/api";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,6 +14,11 @@ const BodySchema = z.object({ amount: z.string().regex(/^\d+(\.\d+)?$/) });
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const auth = await requireAuth(req);
   if (!auth.ok) return auth.response;
+
+  // Rate limit withdrawals: max 5 per minute per user (money scope)
+  const rl = await checkRateLimit(req, "money", auth.user.userId);
+  if (rl) return rl;
+
   const parsed = await parseBody(req, BodySchema);
   if (!parsed.ok) return parsed.response;
   const amt = new Decimal(parsed.data.amount);
