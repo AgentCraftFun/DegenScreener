@@ -13,6 +13,9 @@ interface Agent {
   balance: string;
   totalPnl: string;
   totalVolume: string;
+  ethBalance: string;
+  walletAddress?: string;
+  totalFeesEarned: string;
 }
 
 interface Transaction {
@@ -57,8 +60,12 @@ export default function PortfolioPage() {
     );
   }
 
-  const totalAgentBalance = (agents?.agents ?? []).reduce(
-    (sum, a) => sum + Number(a.balance),
+  const totalEth = (agents?.agents ?? []).reduce(
+    (sum, a) => sum + Number(a.ethBalance || 0),
+    0,
+  );
+  const totalPnl = (agents?.agents ?? []).reduce(
+    (sum, a) => sum + Number(a.totalPnl || 0),
     0,
   );
 
@@ -69,10 +76,10 @@ export default function PortfolioPage() {
       {/* Stats */}
       {user && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          <StatCard label="Internal Balance" value={formatNumber(user.user.internalBalance)} accent="green" />
-          <StatCard label="Agent Balances" value={formatNumber(totalAgentBalance)} accent="cyan" />
-          <StatCard label="Deposited" value={formatNumber(user.user.totalDeposited)} accent="green" />
-          <StatCard label="Withdrawn" value={formatNumber(user.user.totalWithdrawn)} accent="orange" />
+          <StatCard label="Total ETH" value={`${totalEth.toFixed(4)} ETH`} accent="green" />
+          <StatCard label="Total P&L" value={`${totalPnl >= 0 ? "+" : ""}${totalPnl.toFixed(4)} ETH`} accent={totalPnl >= 0 ? "green" : "orange"} />
+          <StatCard label="Agents" value={String(agents?.agents.length ?? 0)} accent="cyan" />
+          <StatCard label="Internal Balance" value={formatNumber(user.user.internalBalance)} accent="orange" />
         </div>
       )}
 
@@ -123,11 +130,16 @@ export default function PortfolioPage() {
                     </span>
                   </div>
                 </div>
+                {a.walletAddress && (
+                  <div className="text-[10px] font-mono text-text-muted mb-2 truncate">
+                    {a.walletAddress.slice(0, 6)}...{a.walletAddress.slice(-4)}
+                  </div>
+                )}
                 <div className="grid grid-cols-3 gap-2 text-[11px]">
                   <div>
-                    <div className="text-text-muted">Balance</div>
+                    <div className="text-text-muted">ETH Balance</div>
                     <div className="font-mono text-accent-cyan font-medium">
-                      {formatNumber(a.balance)}
+                      {Number(a.ethBalance || 0).toFixed(4)}
                     </div>
                   </div>
                   <div>
@@ -142,9 +154,9 @@ export default function PortfolioPage() {
                     </div>
                   </div>
                   <div>
-                    <div className="text-text-muted">Volume</div>
+                    <div className="text-text-muted">{a.type === "DEV" ? "Fees" : "Volume"}</div>
                     <div className="font-mono text-text-secondary">
-                      {formatNumber(a.totalVolume)}
+                      {a.type === "DEV" ? formatNumber(a.totalFeesEarned) : formatNumber(a.totalVolume)}
                     </div>
                   </div>
                 </div>

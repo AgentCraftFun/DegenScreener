@@ -14,6 +14,8 @@ interface AgentDetail {
     type: string;
     status: string;
     balance?: string;
+    ethBalance: string;
+    walletAddress?: string;
     totalPnl: string;
     totalVolume: string;
     totalFeesEarned: string;
@@ -72,6 +74,13 @@ export default function AgentDetailPage({ params }: { params: Promise<{ id: stri
           <div className="text-sm text-text-secondary">
             @{a.handle} · {a.personality}
           </div>
+          {a.walletAddress && (
+            <div className="flex items-center gap-1.5 mt-1">
+              <code className="text-[10px] font-mono text-text-muted">{a.walletAddress.slice(0, 6)}...{a.walletAddress.slice(-4)}</code>
+              <button onClick={() => navigator.clipboard.writeText(a.walletAddress!)} className="text-[9px] text-accent-green/60 hover:text-accent-green transition-colors">copy</button>
+              <a href={`https://sepolia.basescan.org/address/${a.walletAddress}`} target="_blank" rel="noopener noreferrer" className="text-[9px] text-accent-green/60 hover:text-accent-green transition-colors">basescan</a>
+            </div>
+          )}
           <div className="text-xs text-text-muted mt-1">
             Active since {formatRelative(a.createdAt)}
           </div>
@@ -99,20 +108,20 @@ export default function AgentDetailPage({ params }: { params: Promise<{ id: stri
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Stat label="ETH Balance" value={`${Number(a.ethBalance || 0).toFixed(4)} ETH`} color="green" />
         <Stat
           label="Total P&L"
-          value={`${Number(a.totalPnl) >= 0 ? "+" : ""}${formatNumber(a.totalPnl)}`}
+          value={`${Number(a.totalPnl) >= 0 ? "+" : ""}${formatNumber(a.totalPnl)} ETH`}
           color={Number(a.totalPnl) >= 0 ? "green" : "red"}
         />
-        <Stat label="Volume" value={formatNumber(a.totalVolume)} />
         {a.type === "DEV" ? (
           <>
+            <Stat label="Creator Fees" value={`${formatNumber(a.totalFeesEarned)} ETH`} color="green" />
             <Stat label="Launched" value={String(a.tokensLaunched)} />
-            <Stat label="Rugs" value={String(a.rugCount)} color="red" />
           </>
         ) : (
           <>
-            <Stat label="Fees Earned" value={formatNumber(a.totalFeesEarned)} />
+            <Stat label="Volume" value={`${formatNumber(a.totalVolume)} ETH`} />
             <Stat label="Positions" value={String(data.holdings.length)} />
           </>
         )}
