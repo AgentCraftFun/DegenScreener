@@ -1,11 +1,24 @@
 import { NextResponse } from "next/server";
 import { and, eq, gte, count, sql } from "drizzle-orm";
 import { db, schema } from "@degenscreener/db";
+import { getRedis } from "../../../../lib/redis";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const CACHE_KEY = "api:platform:stats";
+const CACHE_TTL = 60; // 1 minute
+
 export async function GET() {
+  // Try Redis cache first
+  try {
+    const redis = getRedis();
+    const cached = await redis.get(CACHE_KEY);
+    if (cached) {
+      return NextResponse.json(JSON.parse(cached));
+    }
+  } catch { /* Redis unavailable — fall through to DB */ }
+
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
   const [totalVol] = await db
@@ -29,7 +42,7 @@ export async function GET() {
     .where(gte(schema.trades.createdAt, dayAgo));
 
   void and;
-  return NextResponse.json({
+  const result = {
     totalVolume: totalVol?.v ?? "0",
     totalAgents: totalAgents?.c ?? 0,
     totalTokensLaunched: totalLaunched?.c ?? 0,
@@ -37,5 +50,13 @@ export async function GET() {
     totalDscreenDeposited: totalDep?.v ?? "0",
     totalDscreenWithdrawn: totalWd?.v ?? "0",
     activeAgents24h: Number(active24h?.c ?? 0),
-  });
+  };
+
+  // Cache result
+  try {
+    const redis = getRedis();
+    await redis.setex(CACHE_KEY, CACHE_TTL, JSON.stringify(result));
+  } catch { /* non-critical */ }
+
+  return NextResponse.json(result);
 }

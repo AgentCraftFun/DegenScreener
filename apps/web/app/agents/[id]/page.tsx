@@ -20,7 +20,6 @@ interface AgentDetail {
     totalVolume: string;
     totalFeesEarned: string;
     tokensLaunched: number;
-    rugCount: number;
     personality: string;
     riskProfile: Record<string, unknown>;
     createdAt: string;
@@ -200,7 +199,7 @@ function TradesList({ trades }: { trades: Trade[] }) {
             </span>
           </div>
           <div className="font-mono text-text-secondary">
-            {formatNumber(t.dscreenAmount)} DSCREEN
+            {formatNumber(t.dscreenAmount)} ETH
           </div>
         </div>
       ))}

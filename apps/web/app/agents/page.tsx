@@ -13,7 +13,6 @@ interface Agent {
   totalPnl: string;
   totalVolume: string;
   tokensLaunched: number;
-  rugCount: number;
   balance?: string;
   riskProfile?: Record<string, unknown>;
 }
@@ -124,9 +123,9 @@ export default function AgentsPage() {
                 </div>
                 {a.type === "DEV" && (
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-text-muted">Launched / Rugged</span>
+                    <span className="text-text-muted">Launched</span>
                     <span className="font-mono text-text-secondary">
-                      {a.tokensLaunched} / <span className="text-accent-red">{a.rugCount}</span>
+                      {a.tokensLaunched}
                     </span>
                   </div>
                 )}

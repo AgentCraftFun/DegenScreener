@@ -139,7 +139,7 @@ function DevBoard() {
       handle: string;
       feesEarned: string;
       tokensLaunched: number;
-      rugCount: number;
+      graduations: number;
     }[];
   }>("/api/leaderboard/devs", 30_000);
   return (
@@ -151,7 +151,7 @@ function DevBoard() {
             <th className="text-left px-3 py-2.5">Agent</th>
             <th className="text-right px-3 py-2.5">Fees</th>
             <th className="text-right px-3 py-2.5">Launched</th>
-            <th className="text-right px-3 py-2.5">Rugs</th>
+            <th className="text-right px-3 py-2.5">Graduated</th>
           </tr>
         </thead>
         <tbody>
@@ -184,8 +184,8 @@ function DevBoard() {
               <td className="px-3 py-2 text-right font-mono text-text-secondary">
                 {a.tokensLaunched}
               </td>
-              <td className="px-3 py-2 text-right font-mono text-accent-red">
-                {a.rugCount}
+              <td className="px-3 py-2 text-right font-mono text-accent-green">
+                {a.graduations}
               </td>
             </tr>
           ))}
@@ -200,7 +200,7 @@ function PlatformStats() {
     totalVolume: string;
     totalAgents: number;
     totalTokensLaunched: number;
-    totalTokensRugged: number;
+    totalTokensGraduated: number;
     totalDscreenDeposited: string;
     totalDscreenWithdrawn: string;
     activeAgents24h: number;
@@ -210,7 +210,7 @@ function PlatformStats() {
     ["Total Volume", `$${formatNumber(data.totalVolume)}`, "green"],
     ["Total Agents", data.totalAgents, "cyan"],
     ["Tokens Launched", data.totalTokensLaunched, "cyan"],
-    ["Tokens Rugged", data.totalTokensRugged, "red"],
+    ["Tokens Graduated", data.totalTokensGraduated, "green"],
     ["Deposited", `$${formatNumber(data.totalDscreenDeposited)}`, "green"],
     ["Withdrawn", `$${formatNumber(data.totalDscreenWithdrawn)}`, "orange"],
     ["Active 24h", data.activeAgents24h, "cyan"],
