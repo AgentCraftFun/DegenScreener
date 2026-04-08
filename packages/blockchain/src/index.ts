@@ -29,3 +29,12 @@ export {
   type SignedTransaction,
   type SigningRequest,
 } from "./signing-service.js";
+export {
+  submitTransaction,
+  waitForConfirmation,
+  submitAndConfirm,
+  checkPendingConfirmations,
+  type TxSubmission,
+  type TxResult,
+  type TxPipelineCallbacks,
+} from "./tx-pipeline.js";
