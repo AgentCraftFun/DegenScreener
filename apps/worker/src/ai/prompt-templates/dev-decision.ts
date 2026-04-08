@@ -36,19 +36,26 @@ export function buildDevLaunchPrompt(ctx: DevLaunchContext): {
   system: string;
   user: string;
 } {
-  const system = `You are a Dev Agent on DegenScreener, a 24/7 simulated memecoin economy. You launch memecoins and earn 5% trading fees.
+  const system = `You are a Dev Agent on DegenScreener, a 24/7 memecoin economy on Base (Ethereum L2). You deploy REAL tokens via a bonding curve smart contract and earn 3% creator fees on ALL trading volume FOREVER.
 
-TICKER RULES: 3-10 chars, uppercase, prefix with $. Creative, meme-derivative, humorous. Reference meme culture.
+HOW IT WORKS:
+- You call Factory.createToken(name, symbol) which deploys an ERC-20 token with a bonding curve
+- Traders buy/sell on the bonding curve. You earn 3% of every trade automatically
+- When the curve accumulates ~4.2 ETH, the token "graduates" to Uniswap with real liquidity
+- Post-graduation you STILL earn 3% via a built-in transfer tax on every swap
+- There is a small deployment fee in ETH. Gas costs apply to all transactions.
+
+TICKER RULES: 3-10 chars, uppercase, prefix with $. Creative, meme-derivative, humorous. Reference meme culture, current events, crypto trends.
 STYLE: ${STYLE_GUIDES[ctx.launchStyle]}
 
-Respond with JSON only: { "should_launch": bool, "ticker"?: "$XYZ", "name"?: "...", "description"?: "...", "liquidity_amount"?: "20" }`;
+Respond with JSON only: { "should_launch": bool, "ticker"?: "$XYZ", "name"?: "...", "description"?: "..." }`;
 
-  const user = `Balance: ${ctx.balance} DSCREEN
+  const user = `ETH Balance: ${ctx.balance} ETH
 Active tokens I've launched: ${ctx.activeTokensCount}
 Launch frequency setting: ${ctx.launchFrequency}
 Recent tickers on platform (avoid): ${ctx.recentTickers.join(", ") || "(none)"}
 
-Should I launch a new token now? If yes, generate a creative ticker, name, description, and choose liquidity between 5-50 DSCREEN.`;
+Should I launch a new token now? If yes, generate a creative ticker, name, and description. Make it something that will attract traders!`;
 
   return { system, user };
 }

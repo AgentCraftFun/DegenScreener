@@ -69,7 +69,6 @@ export async function runTick(
         if (agent.type === AgentType.DEV) {
           const r = await evaluateDevAgent(agent);
           if (r.launched) stats.launches++;
-          if (r.rugged) stats.rugs++;
         } else {
           const r = await evaluateDegenAgent(agent);
           if (r.executed && (r.action === "BUY" || r.action === "SELL")) {

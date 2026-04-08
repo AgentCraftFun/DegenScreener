@@ -1,5 +1,4 @@
-import { Decimal } from "decimal.js";
-import { tokenQueries, poolQueries, schema } from "@degenscreener/db";
+import { tokenQueries, agentQueries, schema } from "@degenscreener/db";
 import { LaunchStyle, LaunchFrequency } from "@degenscreener/shared";
 import {
   buildDevLaunchPrompt,
@@ -7,15 +6,15 @@ import {
 } from "../ai/prompt-templates/dev-decision.js";
 import { callLLM, MODELS } from "../ai/llm-client.js";
 import { trackUsage } from "../ai/cost-tracker.js";
-import { launchToken } from "./launch.js";
-import { rugToken } from "./rug.js";
+import { executeIntent, type TradeIntent } from "../tx/intent.js";
 import { rand } from "../util/rng.js";
 
 type Agent = typeof schema.agents.$inferSelect;
 
 export interface DevEvalResult {
   launched: boolean;
-  rugged: boolean;
+  txPending: boolean;
+  error?: string;
 }
 
 const FREQ_TO_PROB: Record<LaunchFrequency, number> = {
@@ -27,35 +26,38 @@ const FREQ_TO_PROB: Record<LaunchFrequency, number> = {
 export async function evaluateDevAgent(
   agent: Agent,
 ): Promise<DevEvalResult> {
-  const result: DevEvalResult = { launched: false, rugged: false };
+  const result: DevEvalResult = { launched: false, txPending: false };
   const rp = agent.riskProfile as {
     launchStyle?: LaunchStyle;
     launchFrequency?: LaunchFrequency;
-    rugProbability?: number;
   };
-  const bal = new Decimal(agent.balance);
+
+  // Skip if agent not ready (TX_PENDING or COOLDOWN)
+  const ready = await agentQueries.isAgentReady(agent.id);
+  if (!ready) {
+    return result;
+  }
+
+  // Check ETH balance — need enough for deploy fee + gas
+  const ethBal = parseFloat(agent.ethBalance);
+  if (ethBal < 0.001) {
+    // Not enough ETH — can't deploy
+    return result;
+  }
 
   const activeTokens = await tokenQueries.getActiveTokens();
   const mine = activeTokens.filter((t) => t.creatorAgentId === agent.id);
 
-  // Rug decision
-  const rugProb = rp.rugProbability ?? 0;
-  if (mine.length > 0 && rand() < rugProb) {
-    // Pick oldest (could use LLM, but oldest is reliable)
-    const oldest = mine.reduce((a, b) =>
-      a.createdAt < b.createdAt ? a : b,
-    );
-    const ok = await rugToken(agent.id, oldest.id);
-    result.rugged = ok;
-  }
+  // V2: Rug pull removed — bonding curve holds liquidity, not the Dev Agent.
+  // Dev Agents earn 3% fees forever instead.
 
   // Launch decision
   const freq = rp.launchFrequency ?? LaunchFrequency.MEDIUM;
   const launchProb = FREQ_TO_PROB[freq];
-  if (mine.length < 3 && bal.gt(20) && rand() < launchProb) {
+  if (mine.length < 3 && ethBal > 0.001 && rand() < launchProb) {
     const recentTickers = activeTokens.slice(0, 10).map((t) => t.ticker);
     const { system, user } = buildDevLaunchPrompt({
-      balance: agent.balance,
+      balance: agent.ethBalance,
       activeTokensCount: mine.length,
       launchFrequency: freq,
       launchStyle: rp.launchStyle ?? LaunchStyle.SPICY,
@@ -80,27 +82,32 @@ export async function evaluateDevAgent(
       if (
         res.parsed.should_launch &&
         res.parsed.ticker &&
-        res.parsed.name &&
-        res.parsed.liquidity_amount
+        res.parsed.name
       ) {
-        const liq = Decimal.min(
-          new Decimal(res.parsed.liquidity_amount),
-          bal.mul("0.5"),
-        );
-        if (liq.gt(0)) {
-          const launched = await launchToken(
-            agent.id,
-            res.parsed.ticker,
-            res.parsed.name,
-            liq.toFixed(18),
-            "1000000000",
-          );
-          result.launched = !!launched;
+        // Clean ticker: remove $ prefix if present
+        const ticker = res.parsed.ticker.replace(/^\$/, "").toUpperCase();
+
+        // Submit CREATE_TOKEN intent — on-chain tx
+        const intent: TradeIntent = {
+          agentId: agent.id,
+          type: "CREATE_TOKEN",
+          params: {
+            name: res.parsed.name,
+            symbol: ticker,
+          },
+        };
+
+        const intentResult = await executeIntent(intent);
+        if (intentResult.success) {
+          result.launched = true;
+          result.txPending = true;
+          // Token won't appear in DB until event indexer processes TokenCreated event
+        } else {
+          result.error = intentResult.error;
         }
       }
     }
   }
 
-  void poolQueries; // reserved for future use
   return result;
 }
