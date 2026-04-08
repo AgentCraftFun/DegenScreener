@@ -139,10 +139,11 @@ contract GraduationLifecycleTest is Test {
         uint256 charlieFinalTokens = token.balanceOf(charlie);
         assertGt(charlieFinalTokens, 0, "Charlie should still have tokens");
 
-        // Standard ERC-20 transfers still work
+        // Standard ERC-20 transfers still work (with 4% tax: recipient gets 96%)
         vm.prank(bob);
         token.transfer(charlie, 1000 ether);
-        assertEq(token.balanceOf(charlie), charlieFinalTokens + 1000 ether);
+        uint256 expectedReceived = 1000 ether - (1000 ether * 400 / 10000); // 960 ether
+        assertEq(token.balanceOf(charlie), charlieFinalTokens + expectedReceived);
     }
 
     /// @notice Test graduation fee math

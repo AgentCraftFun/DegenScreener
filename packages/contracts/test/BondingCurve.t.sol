@@ -66,7 +66,7 @@ contract BondingCurveTest is Test {
 
         // Deploy token with bonding curve as recipient
         vm.prank(creator);
-        token = new DegenToken("TestToken", "TEST", TOTAL_SUPPLY, address(bondingCurve));
+        token = new DegenToken("TestToken", "TEST", TOTAL_SUPPLY, address(bondingCurve), creator, treasury);
 
         // Initialize the curve (this contract is the factory)
         bondingCurve.initializeCurve(
@@ -315,15 +315,22 @@ contract BondingCurveTest is Test {
         // Deploy attacker
         ReentrancyAttacker attacker = new ReentrancyAttacker(address(bondingCurve));
 
-        // Buy tokens then transfer half to attacker
+        // Buy tokens for buyer via bonding curve (exempt, no tax)
         vm.prank(buyer);
         bondingCurve.buy{value: 1 ether}(address(token));
 
         uint256 tokensBought = token.balanceOf(buyer);
-        uint256 halfTokens = tokensBought / 2;
 
+        // Transfer to attacker — bonding curve is exempt but buyer->attacker is taxed.
+        // Approve bonding curve to transferFrom buyer to attacker to avoid tax (both via exempt path).
+        // Actually, simpler: just use the bonding curve buy directly with attacker as msg.sender.
+        // Alternative: send tokens back to bonding curve (exempt), then bonding curve sends to attacker.
+        // Simplest: just account for the tax.
         vm.prank(buyer);
         token.transfer(address(attacker), tokensBought);
+
+        uint256 attackerBalance = token.balanceOf(address(attacker));
+        uint256 halfTokens = attackerBalance / 2;
 
         // Set up attacker: will sell halfTokens, then try to reenter with the other half
         attacker.setup(address(token), halfTokens);

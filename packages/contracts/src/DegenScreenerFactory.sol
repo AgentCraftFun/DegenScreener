@@ -69,7 +69,8 @@ contract DegenScreenerFactory {
         require(bytes(symbol).length > 0, "Empty symbol");
 
         // Deploy token — all supply minted to bonding curve
-        DegenToken token = new DegenToken(name, symbol, totalSupply, address(bondingCurve));
+        // msg.sender is the creator wallet (receives 3% transfer tax post-graduation)
+        DegenToken token = new DegenToken(name, symbol, totalSupply, address(bondingCurve), msg.sender, treasury);
         address tokenAddr = address(token);
 
         // Initialize the bonding curve for this token
