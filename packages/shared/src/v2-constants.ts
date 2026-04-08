@@ -17,10 +17,13 @@ export const V2_CONTRACTS = {
 } as const;
 
 // --- Fee Rates (basis points) ---
+// Fees apply on ALL trades: pre-bond (via BondingCurve contract) AND post-bond
+// (via DegenToken transfer tax). 3% to token creator, 1% to platform treasury.
 export const V2_PLATFORM_FEE_BPS = 100; // 1%
-export const V2_CREATOR_FEE_BPS = 100; // 1%
-export const V2_GRADUATION_FEE_BPS = 500; // 5%
-export const V2_TOTAL_TRADE_FEE_BPS = V2_PLATFORM_FEE_BPS + V2_CREATOR_FEE_BPS; // 2%
+export const V2_CREATOR_FEE_BPS = 300; // 3%
+export const V2_GRADUATION_FEE_BPS = 500; // 5% (one-time on graduation)
+export const V2_TOTAL_TRADE_FEE_BPS = V2_PLATFORM_FEE_BPS + V2_CREATOR_FEE_BPS; // 4%
+export const V2_TOKEN_TRANSFER_TAX_BPS = 400; // 4% on post-graduation transfers
 
 // --- Token Config ---
 export const V2_TOKEN_TOTAL_SUPPLY = "1000000000000000000000000000"; // 1B * 1e18 (wei)
