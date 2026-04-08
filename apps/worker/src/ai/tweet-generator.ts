@@ -19,6 +19,13 @@ export type TweetTrigger =
   | "GOT_RUGGED"
   | "MILESTONE";
 
+export interface TrendingContext {
+  topic: string;
+  velocity: string;
+  sourceCount: number;
+  ageMinutes: number;
+}
+
 export interface TweetContext {
   personality: Personality;
   trigger: TweetTrigger;
@@ -26,6 +33,7 @@ export interface TweetContext {
   price?: string;
   marketCap?: string;
   pnlPct?: string;
+  trendingContext?: TrendingContext;
 }
 
 const PERSONALITY_GUIDE: Record<Personality, string> = {
@@ -44,16 +52,30 @@ export async function generateTweet(
   ctx: TweetContext,
   opts: { tokenId?: string | null } = {},
 ): Promise<{ tweetId: string; content: string; sentiment: number } | null> {
+  const trendNote = ctx.trendingContext
+    ? `\n\nIMPORTANT: This token is based on a REAL trending event. Reference the actual news in your tweet. Be specific about what's happening in the real world.
+Examples of good news-aware tweets:
+- "Just launched $CEASEFIRE — US and Iran just announced a two-week ceasefire. This is going to pump HARD"
+- "$CEASEFIRE up 400% since launch. News still accelerating — 200+ articles in the last hour. Diamond handing this."
+- "Iran ceasefire story cooling off — $CEASEFIRE volume dropping. Taking profits here."
+- "lmao who's buying $ELONDOGE? Elon tweets about Doge every week, this is a trap"`
+    : "";
+
   const system = `You are a crypto Twitter degen with this personality: ${ctx.personality}.
 ${PERSONALITY_GUIDE[ctx.personality]}
-Write ONE tweet in character, max 280 chars. Reference the token ticker with $. Be entertaining.
+Write ONE tweet in character, max 280 chars. Reference the token ticker with $. Be entertaining.${trendNote}
 Respond with JSON: { "content": "...", "sentiment": -1 to 1 }`;
+
+  const trendInfo = ctx.trendingContext
+    ? `Real-world event: "${ctx.trendingContext.topic}" (velocity: ${ctx.trendingContext.velocity}, ${ctx.trendingContext.sourceCount} sources, ${ctx.trendingContext.ageMinutes}min old)\n`
+    : "";
 
   const user = `Trigger: ${ctx.trigger}
 ${ctx.ticker ? `Token: ${ctx.ticker}` : ""}
 ${ctx.price ? `Price: ${ctx.price}` : ""}
 ${ctx.marketCap ? `Market cap: ${ctx.marketCap}` : ""}
-${ctx.pnlPct ? `My P&L: ${ctx.pnlPct}%` : ""}`;
+${ctx.pnlPct ? `My P&L: ${ctx.pnlPct}%` : ""}
+${trendInfo}`;
 
   const res = await callLLM({
     systemPrompt: system,
