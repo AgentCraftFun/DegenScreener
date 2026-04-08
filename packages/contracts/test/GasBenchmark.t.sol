@@ -28,7 +28,7 @@ contract GasBenchmarkTest is Test {
         address predictedFactory = vm.computeCreateAddress(deployer, nonce + 1);
 
         bondingCurve = new BondingCurve(
-            predictedFactory, treasury, 100, 100, 4.2 ether, 500, address(0)
+            predictedFactory, treasury, 100, 300, 4.2 ether, 500, address(0)
         );
 
         factory = new DegenScreenerFactory(

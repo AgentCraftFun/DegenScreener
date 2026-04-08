@@ -20,7 +20,7 @@ contract DegenScreenerFactoryTest is Test {
     uint256 public constant VIRTUAL_ETH = 1 ether;
     uint256 public constant VIRTUAL_TOKEN = 0;
     uint256 public constant PLATFORM_FEE_RATE = 100;
-    uint256 public constant CREATOR_FEE_RATE = 100;
+    uint256 public constant CREATOR_FEE_RATE = 300; // 3%
     uint256 public constant GRADUATION_THRESHOLD = 4.2 ether;
     uint256 public constant GRADUATION_FEE_RATE = 500;
 

@@ -23,7 +23,7 @@ contract GraduationLifecycleTest is Test {
     uint256 public constant VIRTUAL_ETH = 1 ether;
     uint256 public constant VIRTUAL_TOKEN = 0;
     uint256 public constant PLATFORM_FEE_RATE = 100; // 1%
-    uint256 public constant CREATOR_FEE_RATE = 100; // 1%
+    uint256 public constant CREATOR_FEE_RATE = 300; // 3%
     uint256 public constant GRADUATION_THRESHOLD = 4.2 ether;
     uint256 public constant GRADUATION_FEE_RATE = 500; // 5%
 
@@ -104,8 +104,8 @@ contract GraduationLifecycleTest is Test {
         uint256 treasuryBefore = treasury.balance;
 
         // Bob buys big to push past graduation threshold
-        // After fees, need realEthReserve >= 4.2 ETH. We already have ~1.96 ETH in curve.
-        // Need ~2.24 more in curve. 2.24/0.98 ≈ 2.29 ETH. Send 3 to be safe.
+        // After 4% fees, need realEthReserve >= 4.2 ETH. We already have ~1.92 ETH in curve.
+        // Need ~2.28 more in curve. 2.28/0.96 ≈ 2.375 ETH. Send 3 to be safe.
         vm.prank(bob);
         bondingCurve.buy{value: 3 ether}(tokenAddr);
 

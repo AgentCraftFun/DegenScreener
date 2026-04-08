@@ -48,7 +48,7 @@ contract BondingCurveTest is Test {
     uint256 public constant VIRTUAL_ETH = 1 ether;
     uint256 public constant VIRTUAL_TOKEN = 0; // pump.fun model: all tokens are real
     uint256 public constant PLATFORM_FEE_RATE = 100; // 1%
-    uint256 public constant CREATOR_FEE_RATE = 100; // 1%
+    uint256 public constant CREATOR_FEE_RATE = 300; // 3%
     uint256 public constant GRADUATION_THRESHOLD = 4.2 ether;
     uint256 public constant GRADUATION_FEE_RATE = 500; // 5%
 
@@ -363,7 +363,7 @@ contract BondingCurveTest is Test {
         // With virtualToken=0, virtualEth=1 ETH, totalSupply=1B:
         // k = 1e18 * 1e27 = 1e45
         // Need realEthReserve >= 4.2 ETH after fees
-        // 4.2 / 0.98 ≈ 4.286 ETH — send 5 to be safe
+        // 4% total fees, so 4.2 / 0.96 ≈ 4.375 ETH — send 5 to be safe
         vm.prank(buyer);
         bondingCurve.buy{value: 5 ether}(address(token));
     }

@@ -10,7 +10,7 @@ import "../src/DegenScreenerFactory.sol";
 contract DeployScript is Script {
     // --- Config ---
     uint256 constant PLATFORM_FEE_RATE = 100; // 1%
-    uint256 constant CREATOR_FEE_RATE = 100; // 1%
+    uint256 constant CREATOR_FEE_RATE = 300; // 3%
     uint256 constant GRADUATION_THRESHOLD = 4.2 ether;
     uint256 constant GRADUATION_FEE_RATE = 500; // 5%
     uint256 constant DEPLOY_FEE = 0.01 ether;
