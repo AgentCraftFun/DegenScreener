@@ -8,3 +8,5 @@ dist
 coverage
 packages/contracts/out/
 packages/contracts/cache/
+packages/contracts/lib/
+packages/contracts/README.md
